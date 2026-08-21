@@ -1,0 +1,11 @@
+{
+  "name": "NexaCare",
+  "description": "Healthcare platform for The Gambia featuring patient-facing mobile/desktop app with smart queuing, telemedicine e-visits, digital EHR records, interactive map, vitals, pharmacy refill, and a comprehensive hospital staff operational portal.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
