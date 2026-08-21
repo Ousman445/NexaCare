@@ -37,19 +37,19 @@ export const Login: React.FC<LoginProps> = ({
   const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
   
   // Credentials state
-  const [identifier, setIdentifier] = useState('+220 701 4455');
-  const [password, setPassword] = useState('pass1234');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   // OTP State
   const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState(['2', '2', '0', '4']);
+  const [otpCode, setOtpCode] = useState(['', '', '', '']);
   const [otpTimer, setOtpTimer] = useState(45);
 
   // Forgot password modal
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
-  const [forgotPhone, setForgotPhone] = useState('+220 701 4455');
+  const [forgotPhone, setForgotPhone] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
 
   // Quick Demo Accounts for testing

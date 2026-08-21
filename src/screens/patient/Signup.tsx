@@ -14,14 +14,14 @@ export const Signup: React.FC<SignupProps> = ({
   onSubmit,
   onSwitchMode
 }) => {
-  const [name, setName] = useState('Ousman Bah');
-  const [phone, setPhone] = useState('+220 701 4455');
-  const [password, setPassword] = useState('pass1234');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(name.trim() || 'Ousman Bah', phone.trim() || '+220 701 4455');
+    onSubmit(name.trim() || 'Patient', phone.trim() || '+220 700 0000');
   };
 
   return (

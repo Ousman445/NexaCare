@@ -114,7 +114,7 @@ export function App() {
 
   // Patient State
   const [isAuth, setIsAuth] = useState(false);
-  const [authMode, setAuthMode] = useState<'welcome' | 'signup' | 'login'>('login');
+  const [authMode, setAuthMode] = useState<'welcome' | 'signup' | 'login'>('welcome');
   const [patientScreen, setPatientScreen] = useState<string>('home');
   const [userName, setUserName] = useState<string>('Ousman Bah');
   const [userPhone, setUserPhone] = useState<string>('+220 701 4455');
@@ -412,7 +412,7 @@ export function App() {
 
   const handleLogout = () => {
     setIsAuth(false);
-    setAuthMode('login');
+    setAuthMode('welcome');
     setMobileMenuOpen(false);
   };
 
@@ -921,7 +921,12 @@ export function App() {
                     <Welcome
                       onSignup={() => setAuthMode('signup')}
                       onLogin={() => setAuthMode('login')}
-                      onGuest={() => setIsAuth(true)}
+                      onGuest={() => {
+                        setUserName('Guest User');
+                        setUserPhone('+220 700 0000');
+                        setIsAuth(true);
+                        setPatientScreen('home');
+                      }}
                     />
                   )}
                   {authMode === 'signup' && (
@@ -947,7 +952,12 @@ export function App() {
                         setPatientScreen('home');
                       }}
                       onSwitchToSignup={() => setAuthMode('signup')}
-                      onGuest={() => setIsAuth(true)}
+                      onGuest={() => {
+                        setUserName('Guest User');
+                        setUserPhone('+220 700 0000');
+                        setIsAuth(true);
+                        setPatientScreen('home');
+                      }}
                     />
                   )}
                 </div>
