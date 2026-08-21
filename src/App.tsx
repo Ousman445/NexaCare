@@ -113,8 +113,8 @@ export function App() {
   const [appMode, setAppMode] = useState<'patient' | 'hospital'>('patient');
 
   // Patient State
-  const [isAuth, setIsAuth] = useState(true);
-  const [authMode, setAuthMode] = useState<'welcome' | 'signup' | 'login'>('welcome');
+  const [isAuth, setIsAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'welcome' | 'signup' | 'login'>('login');
   const [patientScreen, setPatientScreen] = useState<string>('home');
   const [userName, setUserName] = useState<string>('Ousman Bah');
   const [userPhone, setUserPhone] = useState<string>('+220 701 4455');
