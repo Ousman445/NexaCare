@@ -22,16 +22,18 @@ import { NexaLogo } from '../../components/NexaLogo';
 
 interface LoginProps {
   onBack: () => void;
-  onSubmit: (name: string, phone: string) => void;
+  onSubmit: (name: string, phone: string, isDemo?: boolean) => void;
   onSwitchToSignup: () => void;
   onGuest: () => void;
+  onGuestDemo?: () => void;
 }
 
 export const Login: React.FC<LoginProps> = ({
   onBack,
   onSubmit,
   onSwitchToSignup,
-  onGuest
+  onGuest,
+  onGuestDemo
 }) => {
   // Login method: 'password' or 'otp'
   const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
@@ -111,14 +113,18 @@ export const Login: React.FC<LoginProps> = ({
   const handleSelectDemo = (account: typeof demoAccounts[0]) => {
     setIdentifier(account.phone);
     setPassword('demoPass2026');
-    onSubmit(account.name, account.phone);
+    onSubmit(account.name, account.phone, true);
   };
 
   const handleSubmitPasswordLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const matchedDemo = demoAccounts.find(a => a.phone === identifier.trim() || a.id.toLowerCase() === identifier.trim().toLowerCase());
-    const finalName = matchedDemo ? matchedDemo.name : (identifier.includes('701') ? 'Ousman Bah' : 'Registered Patient');
-    onSubmit(finalName, identifier.trim() || '+220 701 4455');
+    if (matchedDemo) {
+      onSubmit(matchedDemo.name, matchedDemo.phone, true);
+    } else {
+      const enteredName = identifier.trim() || 'New Patient';
+      onSubmit(enteredName, identifier.trim() || '+220 700 0000', false);
+    }
   };
 
   const handleSendOtp = (e: React.FormEvent) => {
@@ -129,8 +135,11 @@ export const Login: React.FC<LoginProps> = ({
 
   const handleVerifyOtp = () => {
     const matchedDemo = demoAccounts.find(a => a.phone === identifier.trim());
-    const finalName = matchedDemo ? matchedDemo.name : 'Ousman Bah';
-    onSubmit(finalName, identifier.trim() || '+220 701 4455');
+    if (matchedDemo) {
+      onSubmit(matchedDemo.name, matchedDemo.phone, true);
+    } else {
+      onSubmit(identifier.trim() || 'Verified User', identifier.trim() || '+220 700 0000', false);
+    }
   };
 
   const handleOtpChange = (index: number, val: string) => {

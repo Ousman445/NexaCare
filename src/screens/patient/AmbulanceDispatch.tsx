@@ -6,19 +6,18 @@ import {
   ShieldAlert, 
   Truck, 
   Radio, 
-  Clock, 
-  AlertCircle, 
   CheckCircle2,
-  Navigation,
   HeartPulse,
   Flame,
   Building2,
   Copy,
   Check,
-  Shield,
   Activity,
-  UserCheck
+  Compass,
+  LocateFixed,
+  RefreshCw
 } from 'lucide-react';
+import { AmbulanceTracker } from '../../components/AmbulanceTracker';
 
 interface AmbulanceDispatchProps {
   onBackToHome: () => void;
@@ -27,12 +26,16 @@ interface AmbulanceDispatchProps {
 export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHome }) => {
   const [dispatchStatus, setDispatchStatus] = useState<'idle' | 'locating' | 'dispatched' | 'arrived'>('idle');
   const [selectedEmergency, setSelectedEmergency] = useState('Severe Trauma & Bleeding');
-  const [selectedLocation, setSelectedLocation] = useState('Westfield Junction, Serrekunda');
+  const [gpsCoordinates, setGpsCoordinates] = useState('13.4432° N, 16.6781° W');
+  const [pickupLandmark, setPickupLandmark] = useState('Westfield Junction, Serrekunda');
+  const [landmarkDetails, setLandmarkDetails] = useState('Near Africell Head Office, opposite Police Station');
+  const [isEditingGps, setIsEditingGps] = useState(false);
+  const [customLat, setCustomLat] = useState('13.4432');
+  const [customLng, setCustomLng] = useState('-16.6781');
+  const [isLocatingGps, setIsLocatingGps] = useState(false);
   const [etaMinutes, setEtaMinutes] = useState(7);
   const [copiedCoords, setCopiedCoords] = useState(false);
   const [activeFirstAidTab, setActiveFirstAidTab] = useState<'cpr' | 'bleeding' | 'choking' | 'burns'>('cpr');
-
-  const gpsCoordinates = "13.4432° N, 16.6781° W (Serrekunda Area)";
 
   const emergencyTypes = [
     { title: 'Severe Trauma & Bleeding', priority: 'Critical', desc: 'Active hemorrhaging or deep lacerations' },
@@ -42,15 +45,15 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
     { title: 'Pediatric High Fever / Seizure', priority: 'Urgent', desc: 'Febrile convulsions or unresponsive child' }
   ];
 
-  const locations = [
-    'Westfield Junction, Serrekunda',
-    'Senegambia Strip, Kololi',
-    'Brusubi Turntable, WCR',
-    'Bakau Cape Point',
-    'Banjul Independence Drive',
-    'Brikama Main Garage',
-    'Farafenni Ferry Terminal',
-    'Basse Santa Su Town'
+  const landmarkPresets = [
+    { name: 'Westfield Junction, Serrekunda', note: 'Near Africell Head Office, opposite Police Station' },
+    { name: 'Senegambia Strip, Kololi', note: 'Outside Djembe Hotel / Craft Market Junction' },
+    { name: 'Brusubi Turntable, WCR', note: 'Near Brusubi Police Station / Standard Chartered ATM' },
+    { name: 'Bakau Cape Point', note: 'Opposite Ocean Bay Hotel entrance' },
+    { name: 'Banjul Independence Drive', note: 'Near National Assembly / July 22 Arch' },
+    { name: 'Brikama Main Garage', note: 'Central Taxi Park, Brikama Market side' },
+    { name: 'Kanifing Hospital Junction', note: 'Opposite Red Cross HQ, Jimpex Road' },
+    { name: 'Farafenni Ferry Terminal', note: 'North Bank main crossing entry' }
   ];
 
   const emergencyHotlines = [
@@ -59,6 +62,32 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
     { name: 'EFSTH Referral Trauma Unit (Banjul)', number: '+220 422 7700', sub: 'National Referral Hospital Triage', icon: Building2, color: 'bg-[#087F8C]' },
     { name: 'Africmed 24/7 Emergency Fleet', number: '+220 446 0888', sub: 'Private Critical Care Transport', icon: Building2, color: 'bg-emerald-600' }
   ];
+
+  const handleRefreshGps = () => {
+    setIsLocatingGps(true);
+    setTimeout(() => {
+      setGpsCoordinates('13.4438° N, 16.6792° W');
+      setCustomLat('13.4438');
+      setCustomLng('-16.6792');
+      setIsLocatingGps(false);
+    }, 900);
+  };
+
+  const handleApplyCustomGps = () => {
+    if (customLat && customLng) {
+      const latNum = parseFloat(customLat) || 13.4432;
+      const lngNum = parseFloat(customLng) || -16.6781;
+      const latStr = `${Math.abs(latNum).toFixed(4)}° ${latNum >= 0 ? 'N' : 'S'}`;
+      const lngStr = `${Math.abs(lngNum).toFixed(4)}° ${lngNum >= 0 ? 'E' : 'W'}`;
+      setGpsCoordinates(`${latStr}, ${lngStr}`);
+      setIsEditingGps(false);
+    }
+  };
+
+  const handleSelectPresetLandmark = (preset: { name: string; note: string }) => {
+    setPickupLandmark(preset.name);
+    setLandmarkDetails(preset.note);
+  };
 
   const handleRequestDispatch = () => {
     setDispatchStatus('locating');
@@ -69,7 +98,8 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
   };
 
   const handleCopyGPS = () => {
-    navigator.clipboard.writeText(gpsCoordinates);
+    const fullTelemetry = `EMERGENCY SOS: NexaCare Ambulance Dispatch\nGPS Coordinates: ${gpsCoordinates}\nPickup Landmark: ${pickupLandmark}\nLandmark Notes: ${landmarkDetails || 'None'}\nPatient: Ousman Jobe (Blood O+, GM-748921)`;
+    navigator.clipboard.writeText(fullTelemetry);
     setCopiedCoords(true);
     setTimeout(() => setCopiedCoords(false), 2000);
   };
@@ -119,7 +149,7 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
         </a>
       </div>
 
-      {/* Tactical GPS Location Telemetry Bar */}
+      {/* Tactical GPS Location & Pickup Landmark Telemetry Bar */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-[#0A1926] text-white p-4 sm:p-5 border border-slate-800 shadow-xl">
         {/* Subtle Radar Ring Graphic in Corner */}
         <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full border border-rose-500/20 pointer-events-none flex items-center justify-center">
@@ -137,9 +167,15 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-              Africell 4G+ Tower KM-02
-            </span>
+            <button
+              onClick={handleRefreshGps}
+              disabled={isLocatingGps}
+              className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-mono text-[10px] flex items-center gap-1 border border-slate-700 transition-colors cursor-pointer"
+              title="Refresh GPS GNSS lock"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLocatingGps ? 'animate-spin text-teal-400' : ''}`} />
+              <span>{isLocatingGps ? 'Fixing...' : 'Live GPS'}</span>
+            </button>
             <button
               onClick={handleCopyGPS}
               className="px-2.5 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-white font-bold text-[10px] flex items-center gap-1 border border-slate-700 transition-colors cursor-pointer"
@@ -150,27 +186,35 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
           </div>
         </div>
 
-        {/* Coordinates & Landmark */}
-        <div className="space-y-1 relative z-10">
+        {/* Coordinates & Landmark Info */}
+        <div className="space-y-1.5 relative z-10">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-mono text-lg sm:text-2xl font-black text-rose-400 tracking-tight">
+            <span className="font-mono text-base sm:text-2xl font-black text-rose-400 tracking-tight">
               {gpsCoordinates}
             </span>
-            <span className="text-[10px] font-mono font-bold bg-rose-950/70 text-rose-300 border border-rose-800/60 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-mono font-bold bg-rose-950/70 text-rose-300 border border-rose-800/60 px-2 py-0.5 rounded-full shrink-0">
               HDOP: 0.8 · Acc: ±3.2m
             </span>
           </div>
-          <p className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-            <span>Active Landmark: <strong>{selectedLocation}</strong></span>
-          </p>
+
+          <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1">
+            <p className="text-xs text-slate-200 font-medium flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Pickup Landmark: <strong className="text-white font-bold">{pickupLandmark || 'Not specified'}</strong></span>
+            </p>
+            {landmarkDetails && (
+              <p className="text-[11px] text-slate-400 pl-5.5 italic">
+                "{landmarkDetails}"
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Patient Telemetry Metadata Strip */}
         <div className="mt-3 pt-3 border-t border-slate-800 grid grid-cols-3 gap-2 text-[11px] relative z-10">
           <div className="bg-slate-800/50 p-2 rounded-xl border border-slate-700/60">
             <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Patient</span>
-            <span className="font-bold text-white truncate block">Ousman Bah</span>
+            <span className="font-bold text-white truncate block">Ousman Jobe</span>
           </div>
           <div className="bg-slate-800/50 p-2 rounded-xl border border-slate-700/60">
             <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Blood Group</span>
@@ -193,7 +237,7 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
                 Direct Priority Life Support Broadcast
               </h4>
               <p className="text-[11px] text-rose-700 mt-0.5 leading-relaxed">
-                Triggering dispatch notifies the nearest Gambian Red Cross / Ministry of Health triage team instantly with your medical profile (O+ Blood, GM-748921).
+                Triggering dispatch notifies the nearest Gambian Red Cross / Ministry of Health triage team instantly with your medical profile (O+ Blood, GM-748921) and precise pickup landmark.
               </p>
             </div>
           </div>
@@ -228,21 +272,121 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
             </div>
           </div>
 
-          {/* Location Picker */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[#172B3A]">
-              2. Pickup Landmark / Region
-            </label>
-            <select
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              aria-label="Pickup Landmark or Region"
-              className="w-full p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E3EBEE] text-xs font-medium text-[#172B3A] focus:outline-none focus:border-[#087F8C]"
-            >
-              {locations.map((loc) => (
-                <option key={loc} value={loc}>{loc}</option>
-              ))}
-            </select>
+          {/* Location & Landmark Section (User Feature: Add GPS Location with Pickup Landmark) */}
+          <div className="space-y-3 pt-1 border-t border-[#E3EBEE]">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-[#172B3A] flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-rose-600" />
+                <span>2. GPS Location & Pickup Landmark</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsEditingGps(!isEditingGps)}
+                className="text-[11px] font-bold text-[#087F8C] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Compass className="w-3.5 h-3.5" />
+                <span>{isEditingGps ? 'Close Custom GPS' : 'Set Custom Coordinates'}</span>
+              </button>
+            </div>
+
+            {/* Custom GPS Coordinates Input Area */}
+            {isEditingGps && (
+              <div className="p-3 bg-[#F5F9FA] rounded-2xl border border-teal-200 space-y-2 animate-in fade-in">
+                <span className="text-[11px] font-bold text-[#172B3A] block">
+                  Fine-tune Exact GPS Coordinates
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-[#6C8290] block mb-0.5">Latitude (°N)</label>
+                    <input
+                      type="text"
+                      value={customLat}
+                      onChange={(e) => setCustomLat(e.target.value)}
+                      placeholder="13.4432"
+                      className="w-full p-2 rounded-xl bg-white border border-[#E3EBEE] text-xs font-mono text-[#172B3A]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-[#6C8290] block mb-0.5">Longitude (°W)</label>
+                    <input
+                      type="text"
+                      value={customLng}
+                      onChange={(e) => setCustomLng(e.target.value)}
+                      placeholder="-16.6781"
+                      className="w-full p-2 rounded-xl bg-white border border-[#E3EBEE] text-xs font-mono text-[#172B3A]"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleApplyCustomGps}
+                    className="px-3 py-1.5 rounded-lg bg-[#087F8C] text-white text-xs font-bold hover:bg-[#066670] transition-colors cursor-pointer"
+                  >
+                    Apply Coordinates
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRefreshGps}
+                    className="px-3 py-1.5 rounded-lg bg-white border border-[#E3EBEE] text-[#172B3A] text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Auto-Detect Current GPS</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Pickup Landmark Name Input */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-[#172B3A] block">
+                Pickup Landmark / Compound / Street
+              </label>
+              <input
+                type="text"
+                value={pickupLandmark}
+                onChange={(e) => setPickupLandmark(e.target.value)}
+                placeholder="e.g. Behind Serrekunda Market near Central Mosque"
+                className="w-full p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E3EBEE] text-xs font-medium text-[#172B3A] focus:outline-none focus:border-rose-500"
+              />
+            </div>
+
+            {/* Specific Landmark Details / Gate Description */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-[#172B3A] block">
+                Pickup Visual Notes & Access Details (for ambulance driver)
+              </label>
+              <input
+                type="text"
+                value={landmarkDetails}
+                onChange={(e) => setLandmarkDetails(e.target.value)}
+                placeholder="e.g. Blue compound gate, opposite small shop, paved alleyway"
+                className="w-full p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E3EBEE] text-xs font-medium text-[#172B3A] focus:outline-none focus:border-rose-500"
+              />
+            </div>
+
+            {/* Quick-Pick Landmark Chips */}
+            <div className="space-y-1 pt-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#6C8290] block">
+                Popular Regional Landmarks (Tap to set):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {landmarkPresets.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => handleSelectPresetLandmark(preset)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                      pickupLandmark === preset.name
+                        ? 'bg-rose-50 border-rose-300 text-rose-800'
+                        : 'bg-[#F8FAFC] border-[#E3EBEE] text-[#6C8290] hover:text-[#172B3A] hover:bg-white'
+                    }`}
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Trigger Dispatch Button */}
@@ -274,14 +418,18 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
             </div>
             <h3 className="text-lg font-bold font-heading text-[#172B3A]">Locating Nearest Response Vehicle</h3>
             <p className="text-xs text-[#6C8290] mt-1 max-w-sm mx-auto">
-              Handshaking with EFSTH Banjul Trauma Desk, Africmed Critical Fleet & Kanifing Red Cross units...
+              Handshaking with EFSTH Banjul Trauma Desk, Africmed Critical Fleet & Kanifing Red Cross units with landmark: <strong>{pickupLandmark}</strong>...
             </p>
           </div>
 
-          <div className="p-3 bg-[#F8FAFC] rounded-2xl border border-[#E3EBEE] max-w-xs mx-auto text-left space-y-1.5 text-xs font-mono">
+          <div className="p-3 bg-[#F8FAFC] rounded-2xl border border-[#E3EBEE] max-w-sm mx-auto text-left space-y-1.5 text-xs font-mono">
             <div className="flex items-center gap-2 text-emerald-700">
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-              <span>GNSS Fix: 13.4432° N, 16.6781° W</span>
+              <span>GNSS Fix: {gpsCoordinates}</span>
+            </div>
+            <div className="flex items-center gap-2 text-emerald-700">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Landmark: {pickupLandmark}</span>
             </div>
             <div className="flex items-center gap-2 text-emerald-700">
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
@@ -295,70 +443,79 @@ export const AmbulanceDispatch: React.FC<AmbulanceDispatchProps> = ({ onBackToHo
         </div>
       )}
 
-      {/* Active En-Route Telemetry */}
+      {/* Active En-Route Telemetry with Live GPS Route Tracker */}
       {(dispatchStatus === 'dispatched' || dispatchStatus === 'arrived') && (
-        <div className="bg-white rounded-3xl border border-rose-200 p-5 shadow-xs space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
-                <Truck className="w-6 h-6" />
+        <div className="space-y-4">
+          {/* Interactive GPS Ambulance Map Tracker */}
+          <AmbulanceTracker
+            destinationName={pickupLandmark}
+            initialEtaMinutes={etaMinutes}
+            onArrived={() => setDispatchStatus('arrived')}
+          />
+
+          <div className="bg-white rounded-3xl border border-rose-200 p-5 shadow-xs space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                  <Truck className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">
+                    {dispatchStatus === 'arrived' ? 'AMBULANCE ON SCENE' : 'PARAMEDIC UNIT DISPATCHED'}
+                  </span>
+                  <h3 className="text-base font-bold text-[#172B3A]">
+                    {dispatchStatus === 'arrived' ? 'Paramedics Have Arrived' : 'Unit GM-MED-04 En Route'}
+                  </h3>
+                  <p className="text-xs text-[#6C8290]">Destination Landmark: {pickupLandmark}</p>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">
-                  {dispatchStatus === 'arrived' ? 'AMBULANCE ON SCENE' : 'PARAMEDIC UNIT DISPATCHED'}
+
+              {dispatchStatus === 'dispatched' ? (
+                <div className="text-right">
+                  <span className="text-2xl font-black text-rose-600 font-mono">~{etaMinutes} min</span>
+                  <span className="text-[10px] text-[#6C8290] block">Estimated Arrival</span>
+                </div>
+              ) : (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                  Arrived
                 </span>
-                <h3 className="text-base font-bold text-[#172B3A]">
-                  {dispatchStatus === 'arrived' ? 'Paramedics Have Arrived' : 'Unit GM-MED-04 En Route'}
-                </h3>
-                <p className="text-xs text-[#6C8290]">Destination: {selectedLocation}</p>
+              )}
+            </div>
+
+            {/* Progress Timeline */}
+            <div className="p-3.5 bg-[#F8FAFC] rounded-2xl border border-[#E3EBEE] space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 font-bold text-[#172B3A]">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Dispatch Confirmed ({gpsCoordinates})
+                </span>
+                <span className="text-[11px] text-[#6C8290]">Just now</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 font-bold text-[#172B3A]">
+                  <Activity className="w-4 h-4 text-[#087F8C]" />
+                  Driver: Lamin Sanneh · Paramedic: Isatou Jallow
+                </span>
+                <span className="text-[11px] text-[#087F8C] font-semibold">Triage Level 1</span>
               </div>
             </div>
 
-            {dispatchStatus === 'dispatched' ? (
-              <div className="text-right">
-                <span className="text-2xl font-black text-rose-600 font-mono">~{etaMinutes} min</span>
-                <span className="text-[10px] text-[#6C8290] block">Estimated Arrival</span>
-              </div>
-            ) : (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                Arrived
-              </span>
-            )}
-          </div>
-
-          {/* Progress Timeline */}
-          <div className="p-3.5 bg-[#F8FAFC] rounded-2xl border border-[#E3EBEE] space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 font-bold text-[#172B3A]">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Dispatch Confirmed (1166 Network)
-              </span>
-              <span className="text-[11px] text-[#6C8290]">Just now</span>
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <a
+                href="tel:1166"
+                className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Call Paramedic</span>
+              </a>
+              <button
+                onClick={() => setDispatchStatus('idle')}
+                className="py-2.5 px-3 rounded-xl bg-[#F5F9FA] hover:bg-[#EEF4F6] text-[#172B3A] text-xs font-bold border border-[#E3EBEE] transition-colors cursor-pointer"
+              >
+                Cancel Request
+              </button>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 font-bold text-[#172B3A]">
-                <Activity className="w-4 h-4 text-[#087F8C]" />
-                Driver: Lamin Sanneh · Paramedic: Isatou Jallow
-              </span>
-              <span className="text-[11px] text-[#087F8C] font-semibold">Triage Level 1</span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <a
-              href="tel:1166"
-              className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
-            >
-              <Phone className="w-3.5 h-3.5" />
-              <span>Call Paramedic</span>
-            </a>
-            <button
-              onClick={() => setDispatchStatus('idle')}
-              className="py-2.5 px-3 rounded-xl bg-[#F5F9FA] hover:bg-[#EEF4F6] text-[#172B3A] text-xs font-bold border border-[#E3EBEE] transition-colors cursor-pointer"
-            >
-              Cancel Request
-            </button>
           </div>
         </div>
       )}

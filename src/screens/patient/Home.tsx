@@ -2,7 +2,6 @@ import React from 'react';
 import { QueueTicket, Appointment, Hospital } from '../../types';
 import { HOSPITALS } from '../../store';
 import { GambiaMap } from '../../components/GambiaMap';
-import { SOSButton } from '../../components/SOSButton';
 import { 
   Ticket, 
   Calendar, 
@@ -25,7 +24,7 @@ import {
 interface HomeProps {
   userName: string;
   ticket: QueueTicket | null;
-  nextAppointment: Appointment;
+  nextAppointment: Appointment | null;
   unreadMessageCount?: number;
   onNavigate: (screen: string) => void;
   onSelectHospital: (hospitalId: string) => void;
@@ -51,10 +50,26 @@ export const Home: React.FC<HomeProps> = ({
     {
       id: 'appointments',
       label: 'Appointments',
-      sub: 'Upcoming & past',
+      sub: 'Book & manage',
       icon: Calendar,
-      color: 'bg-blue-50 text-[#4F8FC0] border-blue-100',
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-100',
       action: () => onNavigate('appointments')
+    },
+    {
+      id: 'finddoctor',
+      label: 'Find Doctor',
+      sub: 'Browse specialists',
+      icon: Stethoscope,
+      color: 'bg-sky-50 text-[#4F8FC0] border-sky-100',
+      action: () => onNavigate('finddoctor')
+    },
+    {
+      id: 'family',
+      label: 'Family',
+      sub: 'Manage dependents',
+      icon: Users,
+      color: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+      action: () => onNavigate('family')
     },
     {
       id: 'evisit',
@@ -87,22 +102,6 @@ export const Home: React.FC<HomeProps> = ({
       icon: Activity,
       color: 'bg-rose-50 text-rose-600 border-rose-100',
       action: () => onNavigate('vitals')
-    },
-    {
-      id: 'find_doctor',
-      label: 'Find Doctor',
-      sub: 'Specialists & ratings',
-      icon: Stethoscope,
-      color: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-      action: () => onNavigate('finddoctor')
-    },
-    {
-      id: 'family',
-      label: 'Family',
-      sub: 'Switch profiles',
-      icon: Users,
-      color: 'bg-cyan-50 text-cyan-700 border-cyan-100',
-      action: () => onNavigate('family')
     }
   ];
 
@@ -144,13 +143,52 @@ export const Home: React.FC<HomeProps> = ({
             onClick={() => onNavigate('profile')}
             className="w-9 h-9 rounded-xl bg-[#087F8C] text-white flex items-center justify-center font-bold text-xs shadow-2xs hover:bg-[#066670] transition-colors cursor-pointer"
           >
-            {userName.split(' ').map(w => w[0]).slice(0, 2).join('')}
+            {userName ? userName.split(' ').map(w => w[0]).slice(0, 2).join('') : 'U'}
           </button>
         </div>
       </div>
 
-      {/* Global SOS Emergency Banner */}
-      <SOSButton variant="inline" />
+      {/* NexaChat AI Assistant Prominent Shortcut Card */}
+      <div 
+        onClick={() => onNavigate('nexachat')}
+        className="p-4 rounded-3xl bg-gradient-to-r from-[#E4F3F4] via-[#EEF8F8] to-white border border-teal-200/90 shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#087F8C] group-hover:bg-[#066670] text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#087F8C] font-mono">
+                  NEXACHAT AI ASSISTANT
+                </span>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-teal-100 text-teal-800">
+                  Instant
+                </span>
+              </div>
+              <strong className="text-sm font-bold text-[#172B3A] block mt-0.5">
+                Need instant guidance or a queue pass?
+              </strong>
+              <p className="text-xs text-[#6C8290] mt-0.5 leading-relaxed">
+                Chat with NexaChat for smart symptom triage, automated queue booking, and hospital navigation.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate('nexachat');
+            }}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#087F8C] group-hover:bg-[#066670] text-white text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow-xs transition-all cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Chat with NexaChat</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
 
       {/* Active Queue Ticket Card (Real-Time wait, position, estimated time) */}
       {ticket ? (
@@ -217,13 +255,13 @@ export const Home: React.FC<HomeProps> = ({
         </div>
       )}
 
-      {/* Quick Actions Grid (8 requested items) */}
+      {/* Quick Actions Grid */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold font-heading text-[#172B3A] uppercase tracking-wider">
             Quick Actions
           </span>
-          <span className="text-[10px] text-[#087F8C] font-bold">Comprehensive Care</span>
+          <span className="text-[10px] text-[#087F8C] font-bold">Inclusive Services</span>
         </div>
 
         <div className="grid grid-cols-2 min-[460px]:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-2.5">
@@ -250,7 +288,7 @@ export const Home: React.FC<HomeProps> = ({
         </div>
       </div>
 
-      {/* Upcoming Appointment Preview */}
+      {/* Upcoming Appointment Preview (if exists) */}
       {nextAppointment && (
         <div className="p-4 rounded-3xl bg-white border border-[#E3EBEE] shadow-2xs">
           <div className="flex items-center justify-between">

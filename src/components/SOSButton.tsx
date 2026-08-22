@@ -111,7 +111,7 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ variant = 'inline' }) => {
   };
 
   const handleCopyGPS = () => {
-    const textToCopy = `EMERGENCY SOS: NexaCare Gambia GPS Broadcast\nCoordinates: ${gpsCoords}\nLandmark: ${landmark}\nPatient: Ousman Bah (Blood O+, GM-748921)\nMap: https://maps.google.com/?q=13.4432,-16.6781`;
+    const textToCopy = `EMERGENCY SOS: NexaCare Gambia GPS Broadcast\nCoordinates: ${gpsCoords}\nLandmark: ${landmark}\nPatient: Ousman Jobe (Blood O+, GM-748921)\nMap: https://maps.google.com/?q=13.4432,-16.6781`;
     navigator.clipboard.writeText(textToCopy);
     setCopiedCoords(true);
     setTimeout(() => setCopiedCoords(false), 2200);

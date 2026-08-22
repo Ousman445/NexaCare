@@ -16,7 +16,10 @@ import {
   FamilyMember,
   WardBedInfo,
   StaffAppointmentItem,
-  EVisitRequest
+  EVisitRequest,
+  PaymentMethod,
+  PaymentMethodOption,
+  AppNotification
 } from './types';
 
 export const HOSPITALS: Hospital[] = [
@@ -1048,63 +1051,63 @@ export const INITIAL_RECORDS: PatientRecordData = {
 export const INITIAL_PRESCRIPTIONS: Prescription[] = [
   {
     id: 'rx1',
-    medication: 'Amoxicillin 500mg',
-    dosage: '1 capsule (500mg)',
-    frequency: '3 times daily after meals',
+    medication: 'Amoxicillin-Clavulanate 625mg',
+    dosage: '1 tablet (625mg)',
+    frequency: 'Twice daily after meals',
     duration: '7 days',
     prescribedBy: 'Dr. Fatou Ceesay',
     status: 'Active',
     startDate: '18 Aug 2026',
     refillsRemaining: 1,
-    instructions: 'Take with plenty of water and complete the full 7-day course.'
+    instructions: 'Take with full glass of water. Complete full course to prevent bacterial resistance.'
   },
   {
     id: 'rx2',
     medication: 'Paracetamol 500mg',
     dosage: '2 tablets (1000mg)',
-    frequency: 'Every 6-8 hours as needed for fever or headache',
+    frequency: 'Every 6-8 hours as needed for fever or pain',
     duration: '5 days',
     prescribedBy: 'Dr. Fatou Ceesay',
     status: 'Active',
     startDate: '18 Aug 2026',
     refillsRemaining: 2,
-    instructions: 'Do not exceed 8 tablets in 24 hours.'
+    instructions: 'Do not exceed 8 tablets (4000mg) in 24 hours.'
   },
   {
     id: 'rx3',
+    medication: 'Amlodipine 5mg',
+    dosage: '1 tablet daily',
+    frequency: 'Once daily in the morning',
+    duration: '30 days',
+    prescribedBy: 'Dr. Mariama Jatta',
+    status: 'Active',
+    startDate: '1 Aug 2026',
+    refillsRemaining: 3,
+    instructions: 'Daily blood pressure maintenance therapy. Monitor BP regularly.'
+  },
+  {
+    id: 'rx4',
     medication: 'Multivitamin & Iron Folic Acid',
     dosage: '1 tablet daily',
-    frequency: 'Once daily in the morning with food',
+    frequency: 'Once daily with breakfast',
     duration: '30 days',
     prescribedBy: 'Dr. Sarah Badjie',
     status: 'Refill Needed',
     startDate: '15 Jul 2026',
     refillsRemaining: 0,
-    instructions: 'Dietary supplement for vitality and maternal health support.'
+    instructions: 'Nutritional supplement support for vitality and red blood cell production.'
   },
   {
-    id: 'rx4',
-    medication: 'Coartem 20/120mg',
+    id: 'rx5',
+    medication: 'Coartem 20/120mg (Artemether/Lumefantrine)',
     dosage: '4 tablets per dose',
-    frequency: 'Twice daily for 3 days',
+    frequency: 'Twice daily for 3 days with milk or food',
     duration: '3 days',
     prescribedBy: 'Dr. Musa Dibba',
     status: 'Completed',
     startDate: '10 May 2026',
     refillsRemaining: 0,
-    instructions: 'Course successfully completed.'
-  },
-  {
-    id: 'rx5',
-    medication: 'Ciprofloxacin 500mg',
-    dosage: '1 tablet',
-    frequency: 'Twice daily',
-    duration: '5 days',
-    prescribedBy: 'Dr. Omar Touray',
-    status: 'Expired',
-    startDate: '12 Jan 2026',
-    refillsRemaining: 0,
-    instructions: 'Past prescription period.'
+    instructions: 'First-line malaria therapy. Course successfully completed.'
   }
 ];
 
@@ -1159,7 +1162,7 @@ export const INITIAL_VITALS: VitalLog[] = [
 export const INITIAL_FAMILY_MEMBERS: FamilyMember[] = [
   {
     id: 'fam_1',
-    name: 'Ousman Bah',
+    name: 'Ousman Jobe',
     relationship: 'Self',
     age: 28,
     gender: 'Male',
@@ -1171,7 +1174,7 @@ export const INITIAL_FAMILY_MEMBERS: FamilyMember[] = [
   },
   {
     id: 'fam_2',
-    name: 'Fatou Bah',
+    name: 'Fatou Jobe',
     relationship: 'Spouse',
     age: 26,
     gender: 'Female',
@@ -1271,7 +1274,7 @@ export const INITIAL_CONVERSATIONS: ChatConversation[] = [
       {
         id: 'm2',
         senderId: 'patient',
-        senderName: 'Ousman Bah',
+        senderName: 'Ousman Jobe',
         senderRole: 'patient',
         text: 'Good morning Doctor. The fever has subsided significantly. Should I finish the entire 7-day course even if I feel better?',
         timestamp: '10:22 AM',
@@ -1302,7 +1305,7 @@ export const INITIAL_CONVERSATIONS: ChatConversation[] = [
       {
         id: 'm4',
         senderId: 'patient',
-        senderName: 'Ousman Bah',
+        senderName: 'Ousman Jobe',
         senderRole: 'patient',
         text: 'Good day Doctor, requesting confirmation for maternal ultrasound scan schedule next Tuesday.',
         timestamp: 'Yesterday',
@@ -1333,7 +1336,7 @@ export const INITIAL_CONVERSATIONS: ChatConversation[] = [
       {
         id: 'm6',
         senderId: 'patient',
-        senderName: 'Ousman Bah',
+        senderName: 'Ousman Jobe',
         senderRole: 'patient',
         text: 'Hello Pharmacist, is the Coartem and Paracetamol suspension currently in stock for pickup?',
         timestamp: '9:00 AM',
@@ -1405,6 +1408,107 @@ export const INITIAL_LAB_REPORTS: LabReportDetail[] = [
   }
 ];
 
+export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
+  {
+    id: 'Wave',
+    name: 'Wave Mobile Money',
+    provider: 'Wave Gambia (Free & Instant)',
+    category: 'Mobile Money',
+    accountPlaceholder: 'e.g. +220 701 4455',
+    ussdOrCode: 'Wave App / QR',
+    badge: 'Wave',
+    iconName: 'Wave',
+    badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
+    badgeText: '0% Fees · Instant',
+    description: 'Zero-fee mobile transfers via Wave App or QR code merchant scan across Banjul & Kombo.',
+    instructions: 'Open your Wave app or approve the instant push notification sent to your registered Gambian number.'
+  },
+  {
+    id: 'QMoney',
+    name: 'QMoney (QCell)',
+    provider: 'QCell The Gambia',
+    category: 'Mobile Money',
+    accountPlaceholder: 'e.g. +220 312 4499',
+    ussdOrCode: '*323#',
+    badge: 'QMoney',
+    iconName: 'QMoney',
+    badgeBg: 'bg-orange-50 text-orange-700 border-orange-200',
+    badgeText: 'QCell Network',
+    description: 'Direct wallet settlement from your QMoney balance with instant USSD or App authorization.',
+    instructions: 'Dial *323# on your QCell SIM or authorize the merchant payment request in the QMoney app.'
+  },
+  {
+    id: 'AfriMoney',
+    name: 'AfriMoney (Africell)',
+    provider: 'Africell The Gambia',
+    category: 'Mobile Money',
+    accountPlaceholder: 'e.g. +220 701 4455',
+    ussdOrCode: '*777#',
+    badge: 'AfriMoney',
+    iconName: 'AfriMoney',
+    badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
+    badgeText: 'Africell Network',
+    description: 'Fast mobile payment directly from your Africell AfriMoney wallet balance.',
+    instructions: 'Dial *777# on your Africell SIM or enter your 4-digit PIN to confirm the pharmacy merchant transfer.'
+  },
+  {
+    id: 'APS Wallet',
+    name: 'APS Wallet (APS International)',
+    provider: 'APS Islamic Microfinance & Remittance',
+    category: 'Digital Wallet',
+    accountPlaceholder: 'e.g. APS-98442 or +220 701 4455',
+    ussdOrCode: 'APS Online',
+    badge: 'APS Wallet',
+    iconName: 'APS',
+    badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    badgeText: 'Diaspora & Local',
+    description: 'Seamless payment using your APS Gambia digital wallet or Islamic microfinance account.',
+    instructions: 'Enter your APS Wallet ID or registered phone number. Funds are debited instantaneously with zero delays.'
+  },
+  {
+    id: 'Bank Transfer',
+    name: 'Direct Bank Transfer (Wire / NAPS)',
+    provider: 'Trust Bank / GTBank / Ecobank Gambia',
+    category: 'Banking',
+    accountPlaceholder: 'Account No. or Ref ID',
+    ussdOrCode: 'NAPS / Wire',
+    badge: 'Bank Wire',
+    iconName: 'Bank',
+    badgeBg: 'bg-slate-100 text-slate-800 border-slate-200',
+    badgeText: 'Certified IBAN',
+    description: 'Instant electronic transfer via NAPS or Mobile Banking directly to the dispensary bank account.',
+    instructions: 'Transfer to designated dispensary account (Trust Bank #0112489201 or GTBank #204198210) with order reference.'
+  },
+  {
+    id: 'Cash on Delivery',
+    name: 'Cash on Delivery / Pickup',
+    provider: 'Gambian Dalasi (GMD)',
+    category: 'Cash / Insurance',
+    accountPlaceholder: 'Physical Dalasi Cash',
+    ussdOrCode: 'Cash',
+    badge: 'Cash',
+    iconName: 'Cash',
+    badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
+    badgeText: 'Pay on Arrival',
+    description: 'Pay in cash (GMD) upon receiving your medication at your door or dispensary counter.',
+    instructions: 'Please keep exact change ready in Gambian Dalasi (GMD) for the delivery courier or pickup pharmacist.'
+  },
+  {
+    id: 'NHIS Card',
+    name: 'NHIS Prescription Co-Pay',
+    provider: 'Gambia National Health Insurance Scheme',
+    category: 'Cash / Insurance',
+    accountPlaceholder: 'e.g. GM-NHIS-2026-4402',
+    ussdOrCode: 'Gov Health',
+    badge: 'NHIS Co-Pay',
+    iconName: 'NHIS',
+    badgeBg: 'bg-teal-50 text-teal-800 border-teal-200',
+    badgeText: 'Gov Subsidized',
+    description: 'Subsidized health insurance coverage with electronic co-pay claim validation.',
+    instructions: 'Co-pay authorization verified using your registered National Health Insurance Number (NHIS).'
+  }
+];
+
 export const INITIAL_REFILL_ORDERS: RefillOrder[] = [
   {
     id: 'ord_991',
@@ -1419,7 +1523,8 @@ export const INITIAL_REFILL_ORDERS: RefillOrder[] = [
     deliveryAddress: 'House 14, Bertil Harding Highway, Senegambia',
     status: 'Out for Delivery',
     orderDate: 'Today · 11:15 AM',
-    paymentMethod: 'Wave'
+    paymentMethod: 'Wave',
+    accountReference: '+220 701 4455'
   },
   {
     id: 'ord_984',
@@ -1432,9 +1537,126 @@ export const INITIAL_REFILL_ORDERS: RefillOrder[] = [
     deliveryType: 'Pick-up',
     status: 'Completed',
     orderDate: '15 Aug 2026',
-    paymentMethod: 'Cash on Delivery'
+    paymentMethod: 'QMoney',
+    accountReference: '+220 312 4499'
+  },
+  {
+    id: 'ord_976',
+    pharmacyName: 'Banjul Pharmacy & Dispensary',
+    pharmacyPhone: '+220 422 7100',
+    medications: [
+      { name: 'Amlodipine 5mg (30 Tablets)', quantity: 1, priceGMD: 240 }
+    ],
+    totalGMD: 240,
+    deliveryType: 'Home Delivery',
+    deliveryAddress: 'Kairaba Avenue, Kanifing Municipality',
+    status: 'Ready for Pickup',
+    orderDate: '10 Aug 2026',
+    paymentMethod: 'AfriMoney',
+    accountReference: '+220 701 4455'
   }
 ];
+
+export const INITIAL_NOTIFICATIONS: AppNotification[] = [
+  {
+    id: 'notif_1',
+    title: 'Queue Alert: Only 2 Patients Ahead',
+    message: 'Your ticket A-042 at Serrekunda General OPD is nearing its turn. Please report to Room 4.',
+    time: '12 mins ago',
+    read: false,
+    type: 'queue'
+  },
+  {
+    id: 'notif_2',
+    title: 'Appointment Reminder Tomorrow',
+    message: 'Upcoming consultation with Dr. Fatou Ceesay at 10:30 AM.',
+    time: '2 hours ago',
+    read: false,
+    type: 'appointment'
+  },
+  {
+    id: 'notif_3',
+    title: 'Lab Result Ready: Full Blood Count',
+    message: 'EFSTH Central Laboratory has uploaded your latest verified lab panel.',
+    time: 'Yesterday',
+    read: true,
+    type: 'result'
+  },
+  {
+    id: 'notif_4',
+    title: 'Blood Bank Emergency Request',
+    message: 'Urgent need for O- blood at Brikama District Hospital for maternal surgery.',
+    time: '2 days ago',
+    read: true,
+    type: 'system'
+  }
+];
+
+export interface PatientProfileState {
+  nin: string;
+  email: string;
+  gender: string;
+  address: string;
+  bloodType: string;
+  allergies: string[];
+  conditions: string[];
+  isBloodDonor: boolean;
+  nhisNumber: string;
+  primaryHospital: string;
+  primaryDoctor: string;
+  emergencyContacts: Array<{
+    id: string;
+    name: string;
+    relationship: string;
+    phone: string;
+    isPrimary?: boolean;
+  }>;
+}
+
+export const DEMO_PROFILE_DATA: PatientProfileState = {
+  nin: 'GM-NIN-9824-0012',
+  email: 'jobeousman445@gmail.com',
+  gender: 'Male',
+  address: 'Kairaba Avenue, Kanifing Municipality, The Gambia',
+  bloodType: 'O- (Rh Negative)',
+  allergies: ['Penicillin', 'Sulfa Antibiotics', 'NSAIDs (Mild)'],
+  conditions: ['Mild Hypertension', 'Seasonal Asthma'],
+  isBloodDonor: true,
+  nhisNumber: 'GM-NHIS-2026-4402',
+  primaryHospital: 'Kanifing General Hospital',
+  primaryDoctor: 'Dr. Lamin Touray (Family Medicine)',
+  emergencyContacts: [
+    {
+      id: 'ec_1',
+      name: 'Fatou Jobe',
+      relationship: 'Spouse / Next of Kin',
+      phone: '+220 701 4456',
+      isPrimary: true
+    },
+    {
+      id: 'ec_2',
+      name: 'Lamin Jobe',
+      relationship: 'Brother',
+      phone: '+220 312 4499',
+      isPrimary: false
+    }
+  ]
+};
+
+export const CLEAN_PROFILE_DATA: PatientProfileState = {
+  nin: '',
+  email: '',
+  gender: '',
+  address: '',
+  bloodType: '',
+  allergies: [],
+  conditions: [],
+  isBloodDonor: false,
+  nhisNumber: '',
+  primaryHospital: '',
+  primaryDoctor: '',
+  emergencyContacts: []
+};
 
 // ==================== HOSPITAL STAFF STATE ====================
 
@@ -1445,7 +1667,7 @@ export const INITIAL_DESK_QUEUE: DeskQueueItem[] = [
   { id: 'dq4', ticketNumber: 'L-104', patient: 'Sarjo Camara', patientName: 'Sarjo Camara', dept: 'Laboratory', status: 'Waiting', waitTime: 24, wait: '24 min', triage: 'Standard', time: '11:30 AM' },
   { id: 'dq5', ticketNumber: 'P-105', patient: 'Fatoumatta Bojang', patientName: 'Fatoumatta Bojang', dept: 'Pharmacy', status: 'Waiting', waitTime: 30, wait: '30 min', triage: 'Standard', time: '11:35 AM' },
   { id: 'dq6', ticketNumber: 'E-107', patient: 'Alagie Kebbeh', patientName: 'Alagie Kebbeh', dept: 'Emergency', status: 'Waiting', waitTime: 2, wait: '2 min', triage: 'Emergency', time: '11:42 AM' },
-  { id: 'dq7', ticketNumber: 'A-106', patient: 'Ousman Bah', patientName: 'Ousman Bah', dept: 'General OPD', status: 'Completed', waitTime: 0, wait: '0 min', triage: 'Standard', time: '10:45 AM' }
+  { id: 'dq7', ticketNumber: 'A-106', patient: 'Ousman Jobe', patientName: 'Ousman Jobe', dept: 'General OPD', status: 'Completed', waitTime: 0, wait: '0 min', triage: 'Standard', time: '10:45 AM' }
 ];
 
 export const INITIAL_STAFF_PATIENTS: PatientProfile[] = [
@@ -1464,7 +1686,7 @@ export const INITIAL_STAFF_PATIENTS: PatientProfile[] = [
     diagnosis: 'Essential Hypertension & Osteoarthritis Management',
     attendingDoctor: 'Dr. Mariama Jatta',
     nextOfKin: {
-      name: 'Ousman Bah',
+      name: 'Ousman Jobe',
       relation: 'Son',
       phone: '+220 701 4455'
     },
@@ -1599,7 +1821,7 @@ export const INITIAL_STAFF_PATIENTS: PatientProfile[] = [
     diagnosis: 'Pediatric Wheezing & Viral Bronchitis',
     attendingDoctor: 'Dr. Kumba Njie',
     nextOfKin: {
-      name: 'Ousman Bah',
+      name: 'Ousman Jobe',
       relation: 'Father',
       phone: '+220 701 4455'
     },
@@ -1640,20 +1862,20 @@ export const INITIAL_STAFF_PATIENTS: PatientProfile[] = [
   },
   {
     id: 'NC-GM-08841',
-    name: 'Ousman Bah',
+    name: 'Ousman Jobe',
     age: 28,
     gender: 'Male',
     visits: 4,
     lastVisit: 'Today',
     phone: '+220 701 4455',
-    email: 'ousman.bah@gmail.com',
+    email: 'jobeousman445@gmail.com',
     address: 'Kairaba Avenue, Serekunda, KMC',
     bloodGroup: 'O-',
     allergies: ['None'],
     diagnosis: 'Acute Upper Respiratory Tract Infection',
     attendingDoctor: 'Dr. Fatou Ceesay',
     nextOfKin: {
-      name: 'Fatou Bah',
+      name: 'Fatou Jobe',
       relation: 'Spouse',
       phone: '+220 701 4456'
     },
@@ -1663,7 +1885,7 @@ export const INITIAL_STAFF_PATIENTS: PatientProfile[] = [
       'Eye Vision Test — 12 Jan 2026'
     ],
     procedures: ['Dental Scaling & Polishing — 4 Apr 2026'],
-    prescriptions: ['Amoxicillin 500mg', 'Paracetamol 500mg']
+    prescriptions: ['Amoxicillin-Clavulanate 625mg', 'Paracetamol 500mg']
   },
   {
     id: 'NC-GM-09914',
@@ -1725,7 +1947,7 @@ export const INITIAL_STAFF_APPOINTMENTS: StaffAppointmentItem[] = [
   {
     id: 's_apt_1',
     patientId: 'NC-GM-08841',
-    patientName: 'Ousman Bah',
+    patientName: 'Ousman Jobe',
     age: 28,
     gender: 'Male',
     time: '2:00 PM',

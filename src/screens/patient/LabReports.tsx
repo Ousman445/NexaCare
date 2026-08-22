@@ -111,7 +111,7 @@ export const LabReports: React.FC<LabReportsProps> = ({
             </div>
 
             <div className="text-right sm:border-l sm:border-[#E3EBEE] sm:pl-5 space-y-0.5 text-xs text-[#6C8290]">
-              <div>Patient: <span className="font-bold text-[#172B3A]">Ousman Bah</span></div>
+              <div>Patient: <span className="font-bold text-[#172B3A]">Ousman Jobe</span></div>
               <div>ID: <span className="font-mono text-[#172B3A]">NC-GM-08841</span></div>
               <div>Date: <span className="font-semibold text-[#172B3A]">{activeReport.date}</span></div>
             </div>

@@ -321,6 +321,30 @@ export interface Pharmacy {
   inventory: PharmacyMedication[];
 }
 
+export type PaymentMethod = 
+  | 'Wave' 
+  | 'QMoney' 
+  | 'AfriMoney' 
+  | 'APS Wallet' 
+  | 'Bank Transfer' 
+  | 'Cash on Delivery' 
+  | 'NHIS Card';
+
+export interface PaymentMethodOption {
+  id: PaymentMethod;
+  name: string;
+  provider: string;
+  category: 'Mobile Money' | 'Digital Wallet' | 'Banking' | 'Cash / Insurance';
+  accountPlaceholder: string;
+  ussdOrCode?: string;
+  badge: string;
+  iconName: string;
+  badgeBg: string;
+  badgeText: string;
+  description: string;
+  instructions: string;
+}
+
 export interface RefillOrder {
   id: string;
   pharmacyName: string;
@@ -331,7 +355,8 @@ export interface RefillOrder {
   deliveryAddress?: string;
   status: 'Pending' | 'Ready for Pickup' | 'Out for Delivery' | 'Completed';
   orderDate: string;
-  paymentMethod: 'Wave' | 'QMoney' | 'Cash on Delivery' | 'NHIS Card';
+  paymentMethod: PaymentMethod;
+  accountReference?: string;
 }
 
 export interface LabReportDetail {

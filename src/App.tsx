@@ -28,6 +28,9 @@ import { LabReports } from './screens/patient/LabReports';
 import { AmbulanceDispatch } from './screens/patient/AmbulanceDispatch';
 import { FindDoctor } from './screens/patient/FindDoctor';
 import { FamilyProfiles } from './screens/patient/FamilyProfiles';
+import { NexaChat } from './screens/patient/NexaChat';
+import { NexaHotline } from './screens/patient/NexaHotline';
+import { NexaVoice } from './screens/patient/NexaVoice';
 
 // Hospital Staff Screens
 import { StaffDashboard } from './screens/hospital/StaffDashboard';
@@ -54,7 +57,8 @@ import {
   DoctorInternalMessage,
   StaffAppointmentItem,
   PatientProfile,
-  FamilyMember
+  FamilyMember,
+  PaymentMethod
 } from './types';
 import { 
   HOSPITALS, 
@@ -105,38 +109,48 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PanelLeft,
-  LogOut
+  LogOut,
+  Sparkles,
+  Phone,
+  Mic,
+  Navigation,
+  RefreshCw,
+  RotateCcw
 } from 'lucide-react';
 
 export function App() {
   // App mode: 'patient' or 'hospital'
   const [appMode, setAppMode] = useState<'patient' | 'hospital'>('patient');
 
-  // Patient State
+  // Demo mode flag - defaults to false for pristine clean user experience
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+
+  // Patient State - Starts completely clean by default!
   const [isAuth, setIsAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'welcome' | 'signup' | 'login'>('welcome');
   const [patientScreen, setPatientScreen] = useState<string>('home');
-  const [userName, setUserName] = useState<string>('Ousman Bah');
-  const [userPhone, setUserPhone] = useState<string>('+220 701 4455');
-  const [ticket, setTicket] = useState<QueueTicket | null>(INITIAL_TICKET);
+  const [userName, setUserName] = useState<string>('Guest User');
+  const [userPhone, setUserPhone] = useState<string>('');
+  const [ticket, setTicket] = useState<QueueTicket | null>(null);
   const [smsAlerts, setSmsAlerts] = useState<boolean>(true);
 
   // Active family member
   const [activeFamilyMemberId, setActiveFamilyMemberId] = useState<string>('fm_1');
 
-  // Messaging & Pharmacy State
-  const [conversations, setConversations] = useState<ChatConversation[]>(INITIAL_CONVERSATIONS);
+  // Messaging & Pharmacy State - clean by default
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string>('c1');
-  const [refillOrders, setRefillOrders] = useState<RefillOrder[]>(INITIAL_REFILL_ORDERS);
+  const [refillOrders, setRefillOrders] = useState<RefillOrder[]>([]);
+  const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<PaymentMethod>('Wave');
   const [internalMessages, setInternalMessages] = useState<DoctorInternalMessage[]>(DOCTOR_INTERNAL_MESSAGES);
 
   // Selected Detail States
   const [selectedHospitalId, setSelectedHospitalId] = useState<string>(HOSPITALS[0].id);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor>(HOSPITALS[0].doctors[0]);
 
-  // Appointments & Records State
-  const [appointments, setAppointments] = useState(INITIAL_APPOINTMENTS);
-  const [records, setRecords] = useState(INITIAL_RECORDS);
+  // Appointments & Records State - clean by default
+  const [appointments, setAppointments] = useState<{ upcoming: Appointment[]; past: Appointment[] }>({ upcoming: [], past: [] });
+  const [records, setRecords] = useState<any[]>([]);
 
   // Hospital Desk State
   const [hospitalScreen, setHospitalScreen] = useState<string>('dashboard');
@@ -156,9 +170,57 @@ export function App() {
   const currentHospital = HOSPITALS.find(h => h.id === selectedHospitalId) || HOSPITALS[0];
   const unreadCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
 
-  // Patient side navigation items (11 items)
-  const patientNavItems = [
+  // Demo activation and clean reset handlers
+  const handleActivateDemoMode = () => {
+    setIsDemoMode(true);
+    setUserName('Ousman Jobe');
+    setUserPhone('+220 701 4455');
+    setTicket(INITIAL_TICKET);
+    setAppointments(INITIAL_APPOINTMENTS);
+    setRecords(INITIAL_RECORDS);
+    setConversations(INITIAL_CONVERSATIONS);
+    setRefillOrders(INITIAL_REFILL_ORDERS);
+    setIsAuth(true);
+    setPatientScreen('home');
+  };
+
+  const handleResetToCleanState = () => {
+    setIsDemoMode(false);
+    setTicket(null);
+    setAppointments({ upcoming: [], past: [] });
+    setRecords([]);
+    setConversations([]);
+    setRefillOrders([]);
+    if (userName === 'Ousman Jobe' || userName === 'Ousman Bah') {
+      setUserName('Guest User');
+      setUserPhone('');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuth(false);
+    setAuthMode('welcome');
+    setPatientScreen('home');
+    setIsDemoMode(false);
+    setTicket(null);
+    setAppointments({ upcoming: [], past: [] });
+    setRecords([]);
+    setConversations([]);
+    setRefillOrders([]);
+    setUserName('Guest User');
+    setUserPhone('');
+    setMobileMenuOpen(false);
+  };
+
+  // Patient side standard navigation items
+  const patientNavItems: {
+    id: string;
+    label: string;
+    icon: any;
+    badge?: string;
+  }[] = [
     { id: 'home', label: 'Home', icon: HomeIcon, badge: undefined },
+    { id: 'nexachat', label: 'NexaChat Assistant', icon: Sparkles, badge: 'AI' },
     { id: 'findcare', label: 'Find Care', icon: Search, badge: undefined },
     { id: 'finddoctor', label: 'Find a Doctor', icon: Stethoscope, badge: undefined },
     { id: 'myqueue', label: 'My Queue', icon: Ticket, badge: ticket ? `#${ticket.number}` : undefined },
@@ -169,6 +231,13 @@ export function App() {
     { id: 'family', label: 'Family', icon: Users, badge: undefined },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: '2' },
     { id: 'profile', label: 'Profile', icon: User, badge: undefined },
+  ];
+
+  // Emergency & Blood Network items placed in red box right above the line over Switch to Staff Portal
+  const patientEmergencyItems = [
+    { id: 'blooddonor', label: 'Blood Donor Network', icon: Droplet, badge: 'Urgent' },
+    { id: 'hotline', label: 'NexaHotline (1122)', icon: Phone, badge: '1122' },
+    { id: 'ambulance', label: 'Emergency GPS Tracker', icon: Navigation, badge: 'Live GPS' },
   ];
 
   // Staff portal sidebar navigation items (9 tabs)
@@ -410,12 +479,6 @@ export function App() {
     }));
   };
 
-  const handleLogout = () => {
-    setIsAuth(false);
-    setAuthMode('welcome');
-    setMobileMenuOpen(false);
-  };
-
   // Keyboard shortcut (Ctrl/Cmd + B) to toggle sidebar menu on desktop
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -458,8 +521,34 @@ export function App() {
             </div>
           </div>
 
-          {/* Mode Switcher Pill & Roadmap Button */}
+          {/* Mode Switcher Pill, Demo State Switcher, & Roadmap Button */}
           <div className="flex items-center gap-2">
+            
+            {/* Demo / Clean state switcher in Patient Mode */}
+            {appMode === 'patient' && isAuth && (
+              <div className="hidden sm:flex items-center">
+                {isDemoMode ? (
+                  <button
+                    onClick={handleResetToCleanState}
+                    className="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Click to reset to a completely clean state"
+                  >
+                    <RotateCcw className="w-3 h-3 text-amber-600" />
+                    <span>Demo Mode (Reset to Clean)</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleActivateDemoMode}
+                    className="px-2.5 py-1 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#087F8C] border border-teal-200 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Click to load sample test data"
+                  >
+                    <Sparkles className="w-3 h-3 text-[#087F8C]" />
+                    <span>Clean State (Load Demo Data)</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             <button
               onClick={() => setRoadmapOpen(true)}
               className="px-2.5 py-1.5 rounded-xl bg-[#E4F3F4] text-[#087F8C] hover:bg-teal-100 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -610,9 +699,11 @@ export function App() {
 
               {/* Navigation Items (Patient vs Staff) */}
               <nav className="space-y-1">
-                {(appMode === 'patient' ? patientNavItems : staffNavItems).map((item) => {
+                {(appMode === 'patient' ? patientNavItems : staffNavItems).map((item: any) => {
                   const Icon = item.icon;
                   const isActive = appMode === 'patient' ? patientScreen === item.id : hospitalScreen === item.id;
+                  const hasRedCircle = !!item.hasRedCircle;
+
                   return (
                     <button
                       key={item.id}
@@ -630,37 +721,21 @@ export function App() {
                         <Icon className="w-4 h-4" />
                         <span>{item.label}</span>
                       </div>
-                      {item.badge && (
+
+                      {item.badge ? (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${
                           isActive ? 'bg-white/20 text-white' : 'bg-[#E4F3F4] text-[#087F8C]'
                         }`}>
                           {item.badge}
                         </span>
-                      )}
+                      ) : null}
                     </button>
                   );
                 })}
               </nav>
 
-              {/* Staff Quick Action or Blood Donor Quick Access */}
-              {appMode === 'patient' ? (
-                <div className="pt-2 border-t border-[#E3EBEE]">
-                  <button
-                    onClick={() => setPatientScreen('blooddonor')}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      patientScreen === 'blooddonor'
-                        ? 'bg-rose-600 text-white shadow-xs'
-                        : 'text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Droplet className="w-4 h-4 text-rose-500" />
-                      <span>Blood Donor Network</span>
-                    </div>
-                    <span className="text-[10px] bg-rose-200 text-rose-800 px-1.5 py-0.2 rounded font-bold">Urgent</span>
-                  </button>
-                </div>
-              ) : (
+              {/* Staff Quick Action for Hospital Mode */}
+              {appMode === 'hospital' && (
                 <div className="pt-2 border-t border-[#E3EBEE]">
                   <button
                     onClick={() => setHospitalScreen('triage_entry')}
@@ -673,6 +748,48 @@ export function App() {
                     <PlusCircle className="w-4 h-4" />
                     <span>Issue Triage Ticket</span>
                   </button>
+                </div>
+              )}
+
+              {/* Patient Emergency & Blood Network Red Box right above the divider over switch portal */}
+              {appMode === 'patient' && (
+                <div className="pt-2">
+                  <div className="p-1.5 bg-[#FBEAE9] border border-rose-200/80 rounded-2xl space-y-1 shadow-2xs">
+                    {patientEmergencyItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = patientScreen === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setPatientScreen(item.id)}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-rose-600 text-white shadow-xs'
+                              : 'text-[#D9534F] hover:bg-rose-100 hover:text-rose-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="relative flex items-center justify-center">
+                              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-rose-600'}`} />
+                              <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600"></span>
+                              </span>
+                            </div>
+                            <span className="truncate">{item.label}</span>
+                          </div>
+
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-extrabold shrink-0 ${
+                            isActive 
+                              ? 'bg-white/25 text-white' 
+                              : 'bg-rose-200/80 text-rose-800'
+                          }`}>
+                            {item.badge}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -713,9 +830,10 @@ export function App() {
 
             {/* Compact Quick Icons for active mode when hidden */}
             <div className="flex flex-col items-center gap-2 pt-2 border-t border-[#E3EBEE]">
-              {(appMode === 'patient' ? patientNavItems.slice(0, 6) : staffNavItems.slice(0, 6)).map((item) => {
+              {(appMode === 'patient' ? patientNavItems : staffNavItems).map((item: any) => {
                 const Icon = item.icon;
                 const isActive = appMode === 'patient' ? patientScreen === item.id : hospitalScreen === item.id;
+
                 return (
                   <button
                     key={item.id}
@@ -731,12 +849,40 @@ export function App() {
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    {item.badge && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
-                    )}
+                    {item.badge ? (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#087F8C] ring-2 ring-white" />
+                    ) : null}
                   </button>
                 );
               })}
+
+              {/* Red emergency cluster in collapsed mode */}
+              {appMode === 'patient' && (
+                <div className="flex flex-col items-center gap-1.5 p-1 bg-[#FBEAE9] border border-rose-200/80 rounded-xl mt-1">
+                  {patientEmergencyItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = patientScreen === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setPatientScreen(item.id)}
+                        title={item.label}
+                        className={`p-2 rounded-lg transition-all cursor-pointer relative ${
+                          isActive
+                            ? 'bg-rose-600 text-white shadow-xs'
+                            : 'text-[#D9534F] hover:bg-rose-200/60'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600 ring-1 ring-white"></span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </aside>
         )}
@@ -819,9 +965,10 @@ export function App() {
 
                 {/* Nav items list */}
                 <nav className="space-y-1 max-h-[48vh] overflow-y-auto pr-1">
-                  {(appMode === 'patient' ? patientNavItems : staffNavItems).map((item) => {
+                  {(appMode === 'patient' ? patientNavItems : staffNavItems).map((item: any) => {
                     const Icon = item.icon;
                     const isActive = appMode === 'patient' ? patientScreen === item.id : hospitalScreen === item.id;
+
                     return (
                       <button
                         key={item.id}
@@ -843,44 +990,76 @@ export function App() {
                           <Icon className="w-4 h-4" />
                           <span>{item.label}</span>
                         </div>
-                        {item.badge && (
+
+                        {item.badge ? (
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${
                             isActive ? 'bg-white/20 text-white' : 'bg-[#E4F3F4] text-[#087F8C]'
                           }`}>
                             {item.badge}
                           </span>
-                        )}
+                        ) : null}
                       </button>
                     );
                   })}
                 </nav>
 
-                {/* Extra Quick Action */}
-                {appMode === 'patient' ? (
-                  <button
-                    onClick={() => {
-                      setPatientScreen('blooddonor');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Droplet className="w-4 h-4 text-rose-500" />
-                      <span>Blood Donor Network</span>
-                    </div>
-                    <span className="text-[10px] bg-rose-200 text-rose-800 px-1.5 py-0.2 rounded font-bold">Urgent</span>
-                  </button>
-                ) : (
+                {/* Extra Quick Action for Hospital Mode */}
+                {appMode === 'hospital' && (
                   <button
                     onClick={() => {
                       setHospitalScreen('triage_entry');
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer mt-2"
                   >
                     <PlusCircle className="w-4 h-4" />
                     <span>Issue Triage Ticket</span>
                   </button>
+                )}
+
+                {/* Patient Emergency Red Box in Mobile Drawer */}
+                {appMode === 'patient' && (
+                  <div className="pt-2">
+                    <div className="p-1.5 bg-[#FBEAE9] border border-rose-200/80 rounded-2xl space-y-1 shadow-2xs">
+                      {patientEmergencyItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = patientScreen === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              setPatientScreen(item.id);
+                              setMobileMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-rose-600 text-white shadow-xs'
+                                : 'text-[#D9534F] hover:bg-rose-100 hover:text-rose-800'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex items-center justify-center">
+                                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-rose-600'}`} />
+                                <span className="absolute -top-0.5 -right-0.5 flex h-1.5 w-1.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600"></span>
+                                </span>
+                              </div>
+                              <span className="truncate">{item.label}</span>
+                            </div>
+
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold shrink-0 ${
+                              isActive 
+                                ? 'bg-white/25 text-white' 
+                                : 'bg-rose-200/80 text-rose-800'
+                            }`}>
+                              {item.badge}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -923,10 +1102,12 @@ export function App() {
                       onLogin={() => setAuthMode('login')}
                       onGuest={() => {
                         setUserName('Guest User');
-                        setUserPhone('+220 700 0000');
+                        setUserPhone('');
+                        handleResetToCleanState();
                         setIsAuth(true);
                         setPatientScreen('home');
                       }}
+                      onGuestDemo={handleActivateDemoMode}
                     />
                   )}
                   {authMode === 'signup' && (
@@ -934,8 +1115,9 @@ export function App() {
                       mode="signup"
                       onBack={() => setAuthMode('welcome')}
                       onSubmit={(n, p) => {
-                        setUserName(n);
-                        setUserPhone(p);
+                        setUserName(n || 'New Patient');
+                        setUserPhone(p || '');
+                        handleResetToCleanState();
                         setIsAuth(true);
                         setPatientScreen('home');
                       }}
@@ -945,19 +1127,26 @@ export function App() {
                   {authMode === 'login' && (
                     <Login
                       onBack={() => setAuthMode('welcome')}
-                      onSubmit={(n, p) => {
-                        setUserName(n);
-                        setUserPhone(p);
-                        setIsAuth(true);
-                        setPatientScreen('home');
+                      onSubmit={(n, p, isDemo) => {
+                        if (isDemo) {
+                          handleActivateDemoMode();
+                        } else {
+                          setUserName(n || 'Registered Patient');
+                          setUserPhone(p || '');
+                          handleResetToCleanState();
+                          setIsAuth(true);
+                          setPatientScreen('home');
+                        }
                       }}
                       onSwitchToSignup={() => setAuthMode('signup')}
                       onGuest={() => {
                         setUserName('Guest User');
-                        setUserPhone('+220 700 0000');
+                        setUserPhone('');
+                        handleResetToCleanState();
                         setIsAuth(true);
                         setPatientScreen('home');
                       }}
+                      onGuestDemo={handleActivateDemoMode}
                     />
                   )}
                 </div>
@@ -971,6 +1160,40 @@ export function App() {
                       unreadMessageCount={unreadCount}
                       onNavigate={(screen) => setPatientScreen(screen)}
                       onSelectHospital={handleSelectHospital}
+                    />
+                  )}
+
+                  {patientScreen === 'nexachat' && (
+                    <NexaChat
+                      onBackToHome={() => setPatientScreen('home')}
+                      onTicketGenerated={(newTicket) => {
+                        setTicket(newTicket);
+                        setPatientScreen('digital_ticket');
+                      }}
+                      onEmergencyRedirect={() => setPatientScreen('ambulance')}
+                      onHotlineRedirect={() => setPatientScreen('hotline')}
+                    />
+                  )}
+
+                  {patientScreen === 'hotline' && (
+                    <NexaHotline
+                      onBackToHome={() => setPatientScreen('home')}
+                      onGoToNexaChat={() => setPatientScreen('nexachat')}
+                      onGoToEmergency={() => setPatientScreen('ambulance')}
+                    />
+                  )}
+
+                  {patientScreen === 'voice' && (
+                    <NexaVoice
+                      onBackToHome={() => setPatientScreen('home')}
+                      onGoToNexaChat={() => setPatientScreen('nexachat')}
+                      onGoToHotline={() => setPatientScreen('hotline')}
+                    />
+                  )}
+
+                  {patientScreen === 'sos' && (
+                    <AmbulanceDispatch
+                      onBackToHome={() => setPatientScreen('home')}
                     />
                   )}
 
@@ -1075,6 +1298,8 @@ export function App() {
                     <PharmacyFinder
                       pharmacies={GAMBIA_PHARMACIES}
                       refillOrders={refillOrders}
+                      preferredPaymentMethod={preferredPaymentMethod}
+                      onUpdatePreferredPaymentMethod={setPreferredPaymentMethod}
                       onPlaceOrder={handlePlaceRefillOrder}
                       onOpenPharmacistChat={handleOpenPharmacistChat}
                       onBackToHome={() => setPatientScreen('home')}
@@ -1123,6 +1348,8 @@ export function App() {
                     <Profile
                       userName={userName}
                       userPhone={userPhone}
+                      preferredPaymentMethod={preferredPaymentMethod}
+                      onUpdatePreferredPaymentMethod={setPreferredPaymentMethod}
                       onOpenRoadmap={() => setRoadmapOpen(true)}
                       onLogout={() => {
                         setIsAuth(false);
@@ -1138,6 +1365,7 @@ export function App() {
 
                   {patientScreen === 'prescriptions' && (
                     <Prescriptions 
+                      preferredPaymentMethod={preferredPaymentMethod}
                       onBack={() => setPatientScreen('home')} 
                       onGoToPharmacy={() => setPatientScreen('pharmacy')}
                     />
@@ -1396,6 +1624,10 @@ export function App() {
       <Roadmap
         isOpen={roadmapOpen}
         onClose={() => setRoadmapOpen(false)}
+        onOpenVoiceConcept={() => {
+          setRoadmapOpen(false);
+          setPatientScreen('voice');
+        }}
       />
 
     </div>

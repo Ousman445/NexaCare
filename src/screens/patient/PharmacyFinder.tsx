@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Pharmacy, PharmacyMedication, RefillOrder } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { Pharmacy, PharmacyMedication, RefillOrder, PaymentMethod } from '../../types';
+import { PAYMENT_METHOD_OPTIONS } from '../../store';
 import { 
   Search, 
   Pill, 
@@ -18,12 +19,21 @@ import {
   AlertCircle,
   CreditCard,
   Building2,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  Wallet,
+  Smartphone,
+  Landmark,
+  Banknote,
+  Info,
+  BadgeCheck
 } from 'lucide-react';
 
 interface PharmacyFinderProps {
   pharmacies: Pharmacy[];
   refillOrders: RefillOrder[];
+  preferredPaymentMethod?: PaymentMethod;
+  onUpdatePreferredPaymentMethod?: (method: PaymentMethod) => void;
   onPlaceOrder: (order: Omit<RefillOrder, 'id' | 'orderDate' | 'status'>) => void;
   onOpenPharmacistChat: (pharmacistName?: string) => void;
   onBackToHome: () => void;
@@ -32,6 +42,8 @@ interface PharmacyFinderProps {
 export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
   pharmacies,
   refillOrders,
+  preferredPaymentMethod = 'Wave',
+  onUpdatePreferredPaymentMethod,
   onPlaceOrder,
   onOpenPharmacistChat,
   onBackToHome
@@ -47,8 +59,18 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [deliveryType, setDeliveryType] = useState<'Pick-up' | 'Home Delivery'>('Home Delivery');
   const [deliveryAddress, setDeliveryAddress] = useState('House 14, Bertil Harding Highway, Senegambia');
-  const [paymentMethod, setPaymentMethod] = useState<'Wave' | 'QMoney' | 'Cash on Delivery' | 'NHIS Card'>('Wave');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(preferredPaymentMethod);
+  const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false);
+  const [accountRefNumber, setAccountRefNumber] = useState('+220 701 4455');
+  const [saveAsPreferredInSettings, setSaveAsPreferredInSettings] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+
+  // Synchronize paymentMethod when preferredPaymentMethod prop changes
+  useEffect(() => {
+    if (preferredPaymentMethod) {
+      setPaymentMethod(preferredPaymentMethod);
+    }
+  }, [preferredPaymentMethod]);
 
   // Flatten all medications with pharmacy info
   const allMedications = pharmacies.flatMap(pharm => 
@@ -105,6 +127,11 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
   const handleCheckout = () => {
     if (cart.length === 0) return;
     const mainPharm = cart[0].pharmacy;
+    
+    if (saveAsPreferredInSettings && onUpdatePreferredPaymentMethod) {
+      onUpdatePreferredPaymentMethod(paymentMethod);
+    }
+
     onPlaceOrder({
       pharmacyName: mainPharm.name,
       pharmacyPhone: mainPharm.phone,
@@ -112,7 +139,8 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
       totalGMD: cartTotalGMD,
       deliveryType,
       deliveryAddress: deliveryType === 'Home Delivery' ? deliveryAddress : undefined,
-      paymentMethod
+      paymentMethod,
+      accountReference: accountRefNumber.trim() || undefined
     });
     setOrderSuccess(true);
     setCart([]);
@@ -430,62 +458,76 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
       {/* TAB 3: MY REFILL & DISPENSING ORDERS */}
       {activeTab === 'my_orders' && (
         <div className="space-y-3">
-          {refillOrders.map((ord) => (
-            <div
-              key={ord.id}
-              className="p-4 bg-white rounded-2xl border border-[#E3EBEE] shadow-xs space-y-3"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase text-[#6C8290]">
-                    ORDER #{ord.id} · {ord.orderDate}
-                  </span>
-                  <h3 className="text-sm font-bold text-[#172B3A] mt-0.5">
-                    {ord.pharmacyName}
-                  </h3>
-                </div>
-
-                <span
-                  className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                    ord.status === 'Completed'
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : ord.status === 'Out for Delivery'
-                      ? 'bg-sky-50 text-sky-700 animate-pulse'
-                      : 'bg-amber-50 text-amber-700'
-                  }`}
-                >
-                  {ord.status}
-                </span>
-              </div>
-
-              <div className="bg-[#F9FCFD] p-3 rounded-xl border border-[#E3EBEE] space-y-1.5 text-xs">
-                {ord.medications.map((m, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-[#172B3A]">
-                    <span>{m.quantity}x {m.name}</span>
-                    <span className="font-semibold">{m.priceGMD * m.quantity} GMD</span>
+          {refillOrders.map((ord) => {
+            const methodMeta = PAYMENT_METHOD_OPTIONS.find(o => o.id === ord.paymentMethod) || PAYMENT_METHOD_OPTIONS[0];
+            return (
+              <div
+                key={ord.id}
+                className="p-4 bg-white rounded-2xl border border-[#E3EBEE] shadow-xs space-y-3"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase text-[#6C8290]">
+                      ORDER #{ord.id} · {ord.orderDate}
+                    </span>
+                    <h3 className="text-sm font-bold text-[#172B3A] mt-0.5">
+                      {ord.pharmacyName}
+                    </h3>
                   </div>
-                ))}
-                <div className="pt-2 border-t border-[#E3EBEE] flex items-center justify-between font-bold text-[#087F8C]">
-                  <span>Total Paid ({ord.paymentMethod})</span>
-                  <span>{ord.totalGMD} GMD</span>
+
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                      ord.status === 'Completed'
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : ord.status === 'Out for Delivery'
+                        ? 'bg-sky-50 text-sky-700 animate-pulse'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {ord.status}
+                  </span>
+                </div>
+
+                <div className="bg-[#F9FCFD] p-3 rounded-xl border border-[#E3EBEE] space-y-1.5 text-xs">
+                  {ord.medications.map((m, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-[#172B3A]">
+                      <span>{m.quantity}x {m.name}</span>
+                      <span className="font-semibold">{m.priceGMD * m.quantity} GMD</span>
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-[#E3EBEE] flex items-center justify-between font-bold text-[#087F8C]">
+                    <div className="flex items-center gap-1.5">
+                      <span>Payment Method:</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] border font-bold ${methodMeta.badgeBg}`}>
+                        {ord.paymentMethod}
+                      </span>
+                    </div>
+                    <span>{ord.totalGMD} GMD</span>
+                  </div>
+                  {ord.accountReference && (
+                    <div className="text-[11px] text-[#6C8290] flex items-center justify-between pt-0.5">
+                      <span>Account Ref:</span>
+                      <span className="font-mono font-medium text-[#172B3A]">{ord.accountReference}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-[#6C8290]">
+                  <span className="flex items-center gap-1">
+                    <Truck className="w-3.5 h-3.5 text-[#087F8C]" />
+                    {ord.deliveryType}: {ord.deliveryAddress || 'Branch Desk Collection'}
+                  </span>
+
+                  <button
+                    onClick={() => onOpenPharmacistChat(ord.pharmacyName)}
+                    className="text-xs font-bold text-[#087F8C] hover:underline cursor-pointer"
+                  >
+                    Contact Pharmacist →
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between text-xs text-[#6C8290]">
-                <span className="flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-[#087F8C]" />
-                  {ord.deliveryType}: {ord.deliveryAddress || 'Branch Desk Collection'}
-                </span>
-
-                <button
-                  onClick={() => onOpenPharmacistChat(ord.pharmacyName)}
-                  className="text-xs font-bold text-[#087F8C] hover:underline"
-                >
-                  Contact Pharmacist →
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {refillOrders.length === 0 && (
             <div className="p-8 text-center bg-white rounded-2xl border border-[#E3EBEE] text-[#6C8290]">
@@ -500,14 +542,19 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
       {/* CHECKOUT / DISPENSE MODAL */}
       {showOrderModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E3EBEE] space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold font-heading text-[#172B3A]">
-                Confirm Prescription Refill
-              </h3>
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl border border-[#E3EBEE] space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#E3EBEE] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#087F8C] flex items-center justify-center">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+                <h3 className="text-base sm:text-lg font-bold font-heading text-[#172B3A]">
+                  Confirm Prescription Refill
+                </h3>
+              </div>
               <button
                 onClick={() => setShowOrderModal(false)}
-                className="w-8 h-8 rounded-full bg-[#F5F9FA] flex items-center justify-center text-[#6C8290]"
+                className="w-8 h-8 rounded-full bg-[#F5F9FA] hover:bg-[#E3EBEE] flex items-center justify-center text-[#6C8290] transition-colors cursor-pointer"
               >
                 ✕
               </button>
@@ -518,34 +565,39 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce">
                   <Check className="w-6 h-6" />
                 </div>
-                <h4 className="text-base font-bold text-[#172B3A]">Refill Order Confirmed!</h4>
+                <h4 className="text-base font-bold text-[#172B3A]">Refill Order Authorized!</h4>
                 <p className="text-xs text-[#6C8290]">
-                  Your request has been routed to the dispensing pharmacist. You will receive an SMS update on dispatch.
+                  Your request has been routed to the dispensing pharmacist via <strong className="text-[#172B3A]">{paymentMethod}</strong>. You will receive an SMS prompt and delivery dispatch notification shortly.
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 text-xs">
                 {/* Cart Items */}
-                <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
-                  {cart.map((item) => (
-                    <div key={item.med.id} className="flex items-center justify-between p-2.5 bg-[#F9FCFD] rounded-xl border border-[#E3EBEE] text-xs">
-                      <div>
-                        <div className="font-bold text-[#172B3A]">{item.med.name}</div>
-                        <div className="text-[#6C8290]">{item.pharmacy.name}</div>
+                <div>
+                  <label className="text-xs font-bold text-[#172B3A] block mb-1.5">
+                    Prescription Items ({cart.length})
+                  </label>
+                  <div className="max-h-36 overflow-y-auto space-y-2 pr-1">
+                    {cart.map((item) => (
+                      <div key={item.med.id} className="flex items-center justify-between p-2.5 bg-[#F9FCFD] rounded-xl border border-[#E3EBEE] text-xs">
+                        <div>
+                          <div className="font-bold text-[#172B3A]">{item.med.name}</div>
+                          <div className="text-[#6C8290] text-[11px]">{item.pharmacy.name}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-extrabold text-[#087F8C]">
+                            {item.med.priceGMD * item.quantity} GMD
+                          </span>
+                          <button
+                            onClick={() => removeFromCart(item.med.id)}
+                            className="text-rose-500 font-bold hover:underline cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-extrabold text-[#087F8C]">
-                          {item.med.priceGMD * item.quantity} GMD
-                        </span>
-                        <button
-                          onClick={() => removeFromCart(item.med.id)}
-                          className="text-rose-500 font-bold hover:underline"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
                 {/* Delivery Option */}
@@ -555,22 +607,24 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
+                      type="button"
                       onClick={() => setDeliveryType('Home Delivery')}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all ${
+                      className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
                         deliveryType === 'Home Delivery'
-                          ? 'border-[#087F8C] bg-teal-50/50 text-[#087F8C]'
-                          : 'border-[#E3EBEE] text-[#6C8290]'
+                          ? 'border-[#087F8C] bg-teal-50/50 text-[#087F8C] ring-1 ring-[#087F8C]'
+                          : 'border-[#E3EBEE] text-[#6C8290] hover:bg-[#F5F9FA]'
                       }`}
                     >
                       <Truck className="w-4 h-4 mb-1" />
                       Home Delivery
                     </button>
                     <button
+                      type="button"
                       onClick={() => setDeliveryType('Pick-up')}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all ${
+                      className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
                         deliveryType === 'Pick-up'
-                          ? 'border-[#087F8C] bg-teal-50/50 text-[#087F8C]'
-                          : 'border-[#E3EBEE] text-[#6C8290]'
+                          ? 'border-[#087F8C] bg-teal-50/50 text-[#087F8C] ring-1 ring-[#087F8C]'
+                          : 'border-[#E3EBEE] text-[#6C8290] hover:bg-[#F5F9FA]'
                       }`}
                     >
                       <Building2 className="w-4 h-4 mb-1" />
@@ -582,52 +636,193 @@ export const PharmacyFinder: React.FC<PharmacyFinderProps> = ({
                 {deliveryType === 'Home Delivery' && (
                   <div>
                     <label className="text-xs font-bold text-[#172B3A] block mb-1">
-                      Delivery Address (Gambia)
+                      Delivery Address in The Gambia
                     </label>
                     <input
                       type="text"
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-[#F5F9FA] rounded-xl border border-[#E3EBEE] outline-none focus:border-[#087F8C]"
+                      className="w-full px-3 py-2 text-xs bg-[#F5F9FA] rounded-xl border border-[#E3EBEE] outline-hidden focus:bg-white focus:border-[#087F8C]"
                     />
                   </div>
                 )}
 
-                {/* Payment Method */}
-                <div>
-                  <label className="text-xs font-bold text-[#172B3A] block mb-1">
-                    Payment Method
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {(['Wave', 'QMoney', 'Cash on Delivery', 'NHIS Card'] as const).map((method) => (
-                      <button
-                        key={method}
-                        onClick={() => setPaymentMethod(method)}
-                        className={`p-2 rounded-xl border font-semibold text-center transition-all ${
-                          paymentMethod === method
-                            ? 'border-[#087F8C] bg-teal-50 text-[#087F8C]'
-                            : 'border-[#E3EBEE] text-[#6C8290]'
-                        }`}
-                      >
-                        {method}
-                      </button>
-                    ))}
+                {/* Payment Method Selector with Dropdown Tap */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#172B3A]">
+                      Payment Method
+                    </label>
+                    {paymentMethod === preferredPaymentMethod && (
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#E8F6EF] text-[#2E9B68] flex items-center gap-1">
+                        <BadgeCheck className="w-3 h-3" />
+                        Default Preferred
+                      </span>
+                    )}
                   </div>
+
+                  {/* Dropdown Tap Trigger */}
+                  <div className="relative">
+                    {(() => {
+                      const activeOpt = PAYMENT_METHOD_OPTIONS.find(o => o.id === paymentMethod) || PAYMENT_METHOD_OPTIONS[0];
+                      return (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentDropdownOpen(!paymentDropdownOpen)}
+                            className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                              paymentDropdownOpen
+                                ? 'border-[#087F8C] bg-[#F4FBFC] ring-2 ring-[#087F8C]/15'
+                                : 'border-[#E3EBEE] bg-[#F9FCFD] hover:bg-[#F0F8F9] hover:border-teal-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-white border border-[#E3EBEE] flex items-center justify-center shrink-0">
+                                {activeOpt.id === 'Wave' && <Wallet className="w-4 h-4 text-blue-600" />}
+                                {activeOpt.id === 'QMoney' && <Smartphone className="w-4 h-4 text-orange-600" />}
+                                {activeOpt.id === 'AfriMoney' && <Smartphone className="w-4 h-4 text-purple-600" />}
+                                {activeOpt.id === 'APS Wallet' && <Landmark className="w-4 h-4 text-emerald-600" />}
+                                {activeOpt.id === 'Bank Transfer' && <Building2 className="w-4 h-4 text-slate-700" />}
+                                {activeOpt.id === 'Cash on Delivery' && <Banknote className="w-4 h-4 text-amber-600" />}
+                                {activeOpt.id === 'NHIS Card' && <ShieldCheck className="w-4 h-4 text-teal-600" />}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-xs text-[#172B3A] truncate">{activeOpt.name}</span>
+                                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold border ${activeOpt.badgeBg}`}>
+                                    {activeOpt.badgeText}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-[#6C8290] truncate">{activeOpt.provider}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[10px] font-mono text-[#087F8C] hidden sm:inline-block font-semibold">
+                                {activeOpt.ussdOrCode}
+                              </span>
+                              <ChevronDown className={`w-4 h-4 text-[#6C8290] transition-transform ${paymentDropdownOpen ? 'rotate-180 text-[#087F8C]' : ''}`} />
+                            </div>
+                          </button>
+
+                          {/* Dropdown Tap Menu */}
+                          {paymentDropdownOpen && (
+                            <div className="mt-1.5 p-1.5 bg-white rounded-2xl border border-[#E3EBEE] shadow-xl space-y-1 z-30 max-h-56 overflow-y-auto">
+                              {PAYMENT_METHOD_OPTIONS.map((opt) => {
+                                const isSelected = paymentMethod === opt.id;
+                                const isDefault = opt.id === preferredPaymentMethod;
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setPaymentMethod(opt.id);
+                                      setPaymentDropdownOpen(false);
+                                    }}
+                                    className={`w-full p-2 rounded-xl text-left flex items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-[#E4F3F4] text-[#066670] font-bold border border-teal-200'
+                                        : 'hover:bg-[#F5F9FA] text-[#172B3A]'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <div className="w-7 h-7 rounded-lg bg-white border border-[#E3EBEE] flex items-center justify-center shrink-0">
+                                        {opt.id === 'Wave' && <Wallet className="w-3.5 h-3.5 text-blue-600" />}
+                                        {opt.id === 'QMoney' && <Smartphone className="w-3.5 h-3.5 text-orange-600" />}
+                                        {opt.id === 'AfriMoney' && <Smartphone className="w-3.5 h-3.5 text-purple-600" />}
+                                        {opt.id === 'APS Wallet' && <Landmark className="w-3.5 h-3.5 text-emerald-600" />}
+                                        {opt.id === 'Bank Transfer' && <Building2 className="w-3.5 h-3.5 text-slate-700" />}
+                                        {opt.id === 'Cash on Delivery' && <Banknote className="w-3.5 h-3.5 text-amber-600" />}
+                                        {opt.id === 'NHIS Card' && <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-xs truncate">{opt.name}</span>
+                                          {isDefault && (
+                                            <span className="text-[8px] px-1 py-0.2 bg-teal-100 text-teal-800 rounded font-bold">
+                                              Default
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className="text-[10px] text-[#6C8290] block truncate">{opt.provider}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className="text-[9px] font-mono text-[#6C8290]">{opt.ussdOrCode}</span>
+                                      {isSelected && <Check className="w-3.5 h-3.5 text-[#087F8C]" />}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Payment Instructions Details Box */}
+                  {(() => {
+                    const selectedOpt = PAYMENT_METHOD_OPTIONS.find(o => o.id === paymentMethod) || PAYMENT_METHOD_OPTIONS[0];
+                    return (
+                      <div className="p-3 rounded-xl bg-teal-50/50 border border-teal-100 text-xs space-y-2">
+                        <div className="flex items-start gap-2 text-[#066670]">
+                          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#087F8C]" />
+                          <p className="text-[11px] leading-relaxed">
+                            {selectedOpt.instructions}
+                          </p>
+                        </div>
+
+                        {/* Account or Phone Ref Input */}
+                        {paymentMethod !== 'Cash on Delivery' && (
+                          <div className="pt-1.5 border-t border-teal-100/60">
+                            <label className="text-[10px] font-bold uppercase text-[#6C8290] block mb-1">
+                              {paymentMethod === 'NHIS Card' ? 'National Health Insurance Card Number' : 
+                               paymentMethod === 'Bank Transfer' ? 'Depositor Account / Reference ID' :
+                               paymentMethod === 'APS Wallet' ? 'APS Wallet ID / Phone Number' :
+                               `${paymentMethod} Registered Mobile Number`}
+                            </label>
+                            <input
+                              type="text"
+                              value={accountRefNumber}
+                              onChange={(e) => setAccountRefNumber(e.target.value)}
+                              placeholder={selectedOpt.accountPlaceholder}
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-[#E3EBEE] bg-white font-mono text-xs text-[#172B3A] outline-hidden focus:border-[#087F8C]"
+                            />
+                          </div>
+                        )}
+
+                        {/* Checkbox to save as default */}
+                        {paymentMethod !== preferredPaymentMethod && (
+                          <label className="flex items-center gap-2 pt-1 text-[11px] text-[#172B3A] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={saveAsPreferredInSettings}
+                              onChange={(e) => setSaveAsPreferredInSettings(e.target.checked)}
+                              className="w-3.5 h-3.5 accent-[#087F8C] rounded cursor-pointer"
+                            />
+                            <span>Set <strong>{paymentMethod}</strong> as my preferred payment method in Settings</span>
+                          </label>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="pt-3 border-t border-[#E3EBEE] flex items-center justify-between">
                   <div>
-                    <span className="text-xs text-[#6C8290]">Total Amount:</span>
+                    <span className="text-[11px] text-[#6C8290]">Total Refill Amount:</span>
                     <div className="text-lg font-black text-[#087F8C]">
                       {cartTotalGMD} GMD
                     </div>
                   </div>
 
                   <button
+                    type="button"
                     onClick={handleCheckout}
-                    className="py-2.5 px-6 rounded-xl bg-[#087F8C] text-white text-xs font-bold shadow-md hover:bg-[#066670] transition-colors"
+                    className="py-2.5 px-6 rounded-xl bg-[#087F8C] hover:bg-[#066670] text-white text-xs font-bold shadow-md transition-colors cursor-pointer"
                   >
-                    Authorize Refill
+                    Authorize & Pay Refill
                   </button>
                 </div>
               </div>

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { PaymentMethod } from '../../types';
+import { PAYMENT_METHOD_OPTIONS } from '../../store';
 import { 
   User, 
   Phone, 
@@ -26,7 +28,14 @@ import {
   Copy, 
   Check,
   CreditCard,
-  Shield
+  Shield,
+  ChevronDown,
+  Wallet,
+  Landmark,
+  Banknote,
+  Coins,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 
 interface EmergencyContact {
@@ -40,6 +49,8 @@ interface EmergencyContact {
 interface ProfileProps {
   userName: string;
   userPhone: string;
+  preferredPaymentMethod?: PaymentMethod;
+  onUpdatePreferredPaymentMethod?: (method: PaymentMethod) => void;
   onOpenRoadmap: () => void;
   onLogout: () => void;
   onNavigate?: (screen: string) => void;
@@ -48,16 +59,18 @@ interface ProfileProps {
 export const Profile: React.FC<ProfileProps> = ({
   userName: initialUserName,
   userPhone: initialUserPhone,
+  preferredPaymentMethod = 'Wave',
+  onUpdatePreferredPaymentMethod,
   onOpenRoadmap,
   onLogout
 }) => {
   // Personal Details state (editable)
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
-  const [name, setName] = useState(initialUserName || 'Ousman Bah');
+  const [name, setName] = useState(initialUserName && initialUserName !== 'Guest User' ? initialUserName : 'Ousman Jobe');
   const [phone, setPhone] = useState(initialUserPhone || '+220 701 4455');
-  const [email, setEmail] = useState('ousman.bah@gambiahealth.gm');
+  const [email, setEmail] = useState('jobeousman445@gmail.com');
   const [gender, setGender] = useState('Male');
-  const [address, setAddress] = useState('Sukuta Nema, West Coast Region');
+  const [address, setAddress] = useState('Kairaba Avenue, Kanifing Municipality, The Gambia');
   const [nin, setNin] = useState('GM-NIN-9824-0012');
 
   // Medical ID & Clinical Snapshot
@@ -69,18 +82,24 @@ export const Profile: React.FC<ProfileProps> = ({
   const [newCondition, setNewCondition] = useState('');
   const [isBloodDonor, setIsBloodDonor] = useState(true);
 
+  // Preferred Payment Method for Pharmacy & Refills
+  const [currentPaymentMethod, setCurrentPaymentMethod] = useState<PaymentMethod>(preferredPaymentMethod);
+  const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
+  const [paymentAccountRef, setPaymentAccountRef] = useState(initialUserPhone || '+220 701 4455');
+  const [isEditingPaymentRef, setIsEditingPaymentRef] = useState(false);
+
   // Emergency Contacts state
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([
     {
       id: 'ec_1',
-      name: 'Mariama Jallow',
+      name: 'Fatou Jobe',
       relationship: 'Spouse / Next of Kin',
-      phone: '+220 789 0123',
+      phone: '+220 701 4456',
       isPrimary: true
     },
     {
       id: 'ec_2',
-      name: 'Lamin Bah',
+      name: 'Lamin Jobe',
       relationship: 'Brother',
       phone: '+220 312 4499',
       isPrimary: false
@@ -764,7 +783,212 @@ export const Profile: React.FC<ProfileProps> = ({
 
       </div>
 
-      {/* ================= 6. APP LOCALIZATION, SMS & SECURITY PREFERENCES ================= */}
+      {/* ================= 6. PHARMACY ORDERS & REFILL PAYMENT PREFERENCES ================= */}
+      <div className="bg-white rounded-3xl border border-[#E3EBEE] p-5 shadow-xs">
+        <div className="flex items-center justify-between pb-3 border-b border-[#E3EBEE]">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#087F8C] flex items-center justify-center">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold font-heading text-[#172B3A]">
+                Pharmacy & Refill Payment Preferences
+              </h3>
+              <span className="text-[10px] text-[#6C8290]">
+                Choose your default payment method for fast prescription refills and medicine delivery
+              </span>
+            </div>
+          </div>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F6EF] text-[#2E9B68] shrink-0 flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            <span>Default Active</span>
+          </span>
+        </div>
+
+        <div className="pt-4 space-y-4 text-xs">
+          
+          {/* Dropdown Tap Selector */}
+          <div>
+            <label className="text-xs font-bold text-[#172B3A] block mb-1.5 flex items-center justify-between">
+              <span>Preferred Payment Method (Dropdown)</span>
+              <span className="text-[10px] text-[#087F8C] font-semibold">Tap to change option</span>
+            </label>
+
+            {/* Custom Interactive Dropdown Tap Trigger */}
+            <div className="relative">
+              {(() => {
+                const activeOpt = PAYMENT_METHOD_OPTIONS.find(o => o.id === currentPaymentMethod) || PAYMENT_METHOD_OPTIONS[0];
+                return (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setIsPaymentDropdownOpen(!isPaymentDropdownOpen)}
+                      className={`w-full p-3.5 rounded-2xl border transition-all text-left flex items-center justify-between gap-3 cursor-pointer ${
+                        isPaymentDropdownOpen 
+                          ? 'border-[#087F8C] bg-[#F4FBFC] ring-2 ring-[#087F8C]/15 shadow-xs' 
+                          : 'border-[#E3EBEE] bg-[#F5F9FA] hover:bg-[#EBF5F6] hover:border-teal-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-[#E3EBEE] flex items-center justify-center shadow-2xs shrink-0">
+                          {activeOpt.id === 'Wave' && <Wallet className="w-5 h-5 text-blue-600" />}
+                          {activeOpt.id === 'QMoney' && <Smartphone className="w-5 h-5 text-orange-600" />}
+                          {activeOpt.id === 'AfriMoney' && <Smartphone className="w-5 h-5 text-purple-600" />}
+                          {activeOpt.id === 'APS Wallet' && <Landmark className="w-5 h-5 text-emerald-600" />}
+                          {activeOpt.id === 'Bank Transfer' && <Building2 className="w-5 h-5 text-slate-700" />}
+                          {activeOpt.id === 'Cash on Delivery' && <Banknote className="w-5 h-5 text-amber-600" />}
+                          {activeOpt.id === 'NHIS Card' && <ShieldCheck className="w-5 h-5 text-teal-600" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <strong className="text-xs font-bold text-[#172B3A] truncate">{activeOpt.name}</strong>
+                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold border shrink-0 ${activeOpt.badgeBg}`}>
+                              {activeOpt.badgeText}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#6C8290] truncate mt-0.5">{activeOpt.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] font-mono font-bold text-[#087F8C] hidden sm:inline-block">
+                          {activeOpt.ussdOrCode}
+                        </span>
+                        <div className={`w-7 h-7 rounded-lg bg-white border border-[#E3EBEE] flex items-center justify-center transition-transform ${isPaymentDropdownOpen ? 'rotate-180 text-[#087F8C]' : 'text-[#6C8290]'}`}>
+                          <ChevronDown className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Dropdown Menu Options */}
+                    {isPaymentDropdownOpen && (
+                      <div className="mt-2 p-2 bg-white rounded-2xl border border-[#E3EBEE] shadow-xl space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-150 z-20">
+                        <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6C8290]">
+                          Select Gambian Payment Gateway
+                        </div>
+                        {PAYMENT_METHOD_OPTIONS.map((option) => {
+                          const isSelected = currentPaymentMethod === option.id;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => {
+                                setCurrentPaymentMethod(option.id);
+                                if (onUpdatePreferredPaymentMethod) {
+                                  onUpdatePreferredPaymentMethod(option.id);
+                                }
+                                setIsPaymentDropdownOpen(false);
+                                showToast(`Preferred payment method set to ${option.name}`);
+                              }}
+                              className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-3 transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#E4F3F4] text-[#066670] border border-teal-200 font-bold'
+                                  : 'hover:bg-[#F5F9FA] text-[#172B3A] border border-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-lg bg-white border border-[#E3EBEE] flex items-center justify-center shrink-0">
+                                  {option.id === 'Wave' && <Wallet className="w-4 h-4 text-blue-600" />}
+                                  {option.id === 'QMoney' && <Smartphone className="w-4 h-4 text-orange-600" />}
+                                  {option.id === 'AfriMoney' && <Smartphone className="w-4 h-4 text-purple-600" />}
+                                  {option.id === 'APS Wallet' && <Landmark className="w-4 h-4 text-emerald-600" />}
+                                  {option.id === 'Bank Transfer' && <Building2 className="w-4 h-4 text-slate-700" />}
+                                  {option.id === 'Cash on Delivery' && <Banknote className="w-4 h-4 text-amber-600" />}
+                                  {option.id === 'NHIS Card' && <ShieldCheck className="w-4 h-4 text-teal-600" />}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold truncate">{option.name}</span>
+                                    <span className={`text-[9px] px-1.5 py-0.2 rounded border font-semibold ${option.badgeBg}`}>
+                                      {option.badgeText}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-[#6C8290] truncate">{option.provider}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-[10px] font-mono text-[#6C8290]">{option.ussdOrCode}</span>
+                                {isSelected ? (
+                                  <div className="w-5 h-5 rounded-full bg-[#087F8C] text-white flex items-center justify-center">
+                                    <Check className="w-3 h-3" />
+                                  </div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full border border-slate-300" />
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Account Number / Phone Reference linked to default method */}
+          <div className="p-3.5 rounded-2xl bg-[#F9FCFD] border border-[#E3EBEE] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-[11px] font-bold text-[#172B3A] block">
+                Registered Mobile Wallet / Account Reference
+              </span>
+              <span className="text-[10px] text-[#6C8290]">
+                Pre-filled when paying for dispensary orders & refill deliveries
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isEditingPaymentRef ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={paymentAccountRef}
+                    onChange={(e) => setPaymentAccountRef(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg border border-[#087F8C] bg-white text-xs font-mono font-bold outline-hidden text-[#172B3A] w-36"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingPaymentRef(false);
+                      showToast('Payment account reference saved');
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#087F8C] text-white text-xs font-bold hover:bg-[#066670] cursor-pointer"
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E3EBEE] font-mono text-xs font-bold text-[#172B3A]">
+                    {paymentAccountRef}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingPaymentRef(true)}
+                    className="p-1.5 rounded-lg text-[#087F8C] hover:bg-[#E4F3F4] transition-colors cursor-pointer"
+                    title="Edit account reference"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Automatic sync note */}
+          <div className="p-3 rounded-xl bg-teal-50/60 border border-teal-100 flex items-start gap-2 text-[11px] text-[#066670]">
+            <Sparkles className="w-3.5 h-3.5 text-[#087F8C] shrink-0 mt-0.5" />
+            <p>
+              Your preferred payment method (<strong className="text-[#172B3A]">{currentPaymentMethod}</strong>) is automatically applied as the default choice during checkout on the <strong>Pharmacy</strong> and <strong>Prescriptions</strong> pages.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ================= 7. APP LOCALIZATION, SMS & SECURITY PREFERENCES ================= */}
       <div className="bg-white rounded-3xl border border-[#E3EBEE] p-5 shadow-xs">
         <div className="flex items-center gap-2 pb-3 border-b border-[#E3EBEE]">
           <div className="w-8 h-8 rounded-xl bg-[#F5F9FA] text-[#172B3A] flex items-center justify-center">
